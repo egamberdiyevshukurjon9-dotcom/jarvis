@@ -31,7 +31,8 @@ import {
 } from './lib/brain'
 import { startAnalyser, micLevel } from './lib/audio'
 import { probeCapabilities } from './lib/capabilities'
-import { env } from './config'
+import { env, BRIEFING_TIME } from './config'
+import { scheduleBriefing } from './lib/briefing'
 
 /**
  * The conversation.
@@ -68,6 +69,15 @@ const NAME = '(?:jarvis|jarvys|jervis|travis|jarviss|java\'s|jarv)'
 const BARE_NAME = new RegExp(`^(?:hey|hi|ok|okay|yo)?\\s*${NAME}[\\s,.!?]*$`, 'i')
 /** A leading vocative on a real command: "Jarvis, what's the weather". */
 const LEADING_NAME = new RegExp(`^(?:hey|hi|ok|okay|yo)?\\s*${NAME}\\b[\\s,.:!?-]*`, 'i')
+/** Sending him to sleep: "good night", "go to sleep", "that's all, Jarvis". */
+const GOOD_NIGHT = new RegExp(
+  `^(?:good\\s*night|nighty?\\s*night|go\\s+to\\s+sleep|sleep|stand\\s+down|that'?s\\s+all|xayrli\\s+tun)` +
+    `(?:[\\s,.!]+(?:${NAME}|sir|for\\s+now|for\\s+today))*[\\s,.!?]*$`,
+  'i',
+)
+
+/** "Hey Jarvis, wake up" is a greeting, not a question for the model. */
+const WAKE_UP = /^(?:wake\s*up|are\s+you\s+(?:there|up|awake)|you\s+up)[\s,.!?]*(?:sir|daddy'?s\s+home)?[\s,.!?]*$/i
 
 export default function App() {
   const store = useStore
@@ -129,6 +139,20 @@ export default function App() {
 
     clearIdle()
     const s = store.getState()
+
+    // "Good night" is answered here, not by the model: it is a command to the
+    // interface, and a round trip to say two words would be a waste of both.
+    if (GOOD_NIGHT.test(said)) {
+      silence()
+      s.pushTurn({ id: newId(), role: 'user', text: said })
+      s.setPhase('speaking')
+      const bye = createSpeaker()
+      speaker.current = bye
+      bye.say('Good night, sir.')
+      await bye.end()
+      if (!stale()) goDormant()
+      return
+    }
     // Last turn's panels and blades go now, before the new answer starts
     // putting its own up. Anything the model marked sticky survives.
     s.clearPanels()
@@ -245,7 +269,7 @@ export default function App() {
 
     // "Jarvis, what's happening in AI this week" in one breath. Waiting for a
     // greeting he didn't need is the most common way an assistant wastes time.
-    if (trailing) {
+    if (trailing && !WAKE_UP.test(trailing)) {
       void respond(trailing)
       return
     }
@@ -684,9 +708,21 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
 
+    // The morning briefing, at VITE_BRIEFING_TIME. Only from a quiet moment:
+    // never over an answer in progress, and never before INITIALISE, when the
+    // browser would not let him make a sound.
+    const stopBriefing = scheduleBriefing(BRIEFING_TIME, () => {
+      const p = store.getState().phase
+      if (p !== 'dormant' && p !== 'listening') return false
+      sfx.play('wake')
+      void respond('Morning briefing')
+      return true
+    })
+
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('keydown', onKey)
+      stopBriefing()
       clearIdle()
       if (voicePoll.current) clearInterval(voicePoll.current)
       voice.current?.stop()

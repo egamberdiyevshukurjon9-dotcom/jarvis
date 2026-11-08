@@ -40,6 +40,27 @@ language.
 
 ---
 
+## Install in one step
+
+**Windows:** double-click **`install.cmd`**, or paste this into PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/egamberdiyevshukurjon9-dotcom/jarvis/main/install.ps1 | iex
+```
+
+**macOS / Linux:** `bash install.sh`
+
+The installer adds whatever is missing (Git, Node.js LTS, FFmpeg, Claude Code),
+logs you in to Claude Code, runs `npm install`, then asks a few questions —
+ElevenLabs key and voice, mail/calendar connectors, morning-briefing time, write
+access, the video-editor folder — and saves the answers to `.env.local`. On
+Windows it also puts a **JARVIS** shortcut on the desktop. Change any answer
+later with `npm run configure`.
+
+Ўзбекча тўлиқ қўлланма: **[ORNATISH.md](ORNATISH.md)**.
+
+---
+
 ## Quick start
 
 First, install, then start it:
@@ -168,6 +189,32 @@ A few things you can say:
 > to let them in, and `JARVIS_MCP_SERVERS` to choose which `~/.claude.json`
 > servers JARVIS gets.
 
+### Skills
+
+Skills are short procedures in `skills/*.md` that JARVIS follows when a request
+matches. They ship with:
+
+| Skill | Say | Needs |
+|---|---|---|
+| `morning-briefing` | *"Good morning"*, *"What do I have tomorrow?"* — and on its own at `VITE_BRIEFING_TIME` | mail + calendar |
+| `calendar` | *"Any clashes tomorrow?"* — overlaps, unanswered invitations | calendar |
+| `inbox` | *"What's in my inbox?"*, *"Who is waiting for my reply?"* | mail |
+| `revenue` | *"How much did we make yesterday?"* | a payments connector or dashboard |
+| `video-editor` | *"Edit my footage into a reel"* — cuts, subtitles, colour, music with FFmpeg | write access, FFmpeg |
+| `video-style` | *"Learn my style from the references"* — saves a `<name>-style` skill | write access, FFmpeg |
+| `website-builder` | *"Build me a landing page for…"* — one animated page, opened in Chrome | write access |
+
+Mail, calendar and payments come from your claude.ai connectors
+(`JARVIS_ACCOUNT_CONNECTORS=1`); without them JARVIS reads the same pages in your
+own signed-in Chrome. *"Good night"* puts him to sleep without a model round trip,
+and *"Hey Jarvis, wake up"* wakes him without asking the model anything.
+
+Your own skills go in `~/.jarvis/workspace/skills/` (a file there with a built-in
+name replaces the built-in). They are read each time a browser connects, so a
+skill JARVIS writes is in use from the next session. Every skill is part of the
+system prompt, so each is capped at 6 KB; `JARVIS_SKILLS` narrows the list
+(`none` turns them off).
+
 ### JARVIS controls the interface
 
 He drives the UI through MCP tools the bridge exposes:
@@ -221,8 +268,10 @@ then the triangular arc reactor lighting up — with a start-up sound under it
 
 ## Configuration
 
-Everything is optional in bridge mode. Frontend settings live in `.env.local`
-(copy `.env.example`); bridge settings are environment variables.
+Everything is optional in bridge mode. Settings live in `.env.local` (copy
+`.env.example`, or let `npm run configure` write it): Vite reads the `VITE_*`
+lines for the browser and the bridge reads the rest. A variable set in the shell
+wins over the file.
 
 ### Bridge
 
@@ -245,7 +294,9 @@ Everything is optional in bridge mode. Frontend settings live in `.env.local`
 | `JARVIS_CLAUDE_EXECUTABLE` | bundled CLI | Run the agent through this executable instead, e.g. a sandbox wrapper that execs the real CLI |
 | `JARVIS_CHROME_PIPE` | none | WSL only: the Windows pipe name the browser relay connects to |
 | `JARVIS_DEBUG` | off | `1` logs every agent message to the bridge terminal, answer text and tool calls included |
-| `JARVIS_VOICE_ID` | none | ElevenLabs voice id |
+| `JARVIS_VOICE_ID` | George | ElevenLabs voice id |
+| `JARVIS_SKILLS` | all | Comma-separated skills to load; `none` loads none |
+| `JARVIS_VIDEO_DIR` | none | The video editor's folder (footage / references / export); added to the file roots |
 | `ELEVENLABS_API_KEY` | none | Optional; enables the ElevenLabs voice + Scribe |
 
 ### Frontend (`.env.local`)

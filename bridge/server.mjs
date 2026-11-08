@@ -15,16 +15,21 @@
  *   node bridge/server.mjs
  */
 
+// First, so the settings in .env.local are in process.env before any module
+// below reads them at import time.
+import './env.mjs'
 import { WebSocketServer } from 'ws'
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { displayServer } from './panels.mjs'
 import { uiServer } from './ui.mjs'
 import { chromeAvailable, chromeServer } from './chrome.mjs'
 import { visionServer } from './vision.mjs'
+import { loadSkills, skillsPrompt } from './skills.mjs'
+import { fileURLToPath } from 'node:url'
 import { homedir, tmpdir } from 'node:os'
 import { mkdirSync, readFileSync, realpathSync } from 'node:fs'
 import { readFile, realpath, stat } from 'node:fs/promises'
-import { isAbsolute, join, relative, resolve as resolvePath } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve as resolvePath } from 'node:path'
 import { openRemote, proxyError, vetTarget, PROXY_UA } from './net.mjs'
 import { probeUrl, renderPage } from './page.mjs'
 import {
@@ -287,12 +292,33 @@ const WORKSPACE = resolvePath(
 )
 mkdirSync(WORKSPACE, { recursive: true })
 
-const TOOL_ROOTS = fileRoots({
-  workspace: WORKSPACE,
-  extra: (process.env.JARVIS_FILE_ROOTS ?? '')
+/**
+ * Where skills live: the ones shipped in this project, and the user's own in
+ * the workspace — inside it so that JARVIS, with write access, can save a new
+ * one (the video editor's style skills) without the file tools leaving their
+ * roots. See skills.mjs.
+ */
+const BUILTIN_SKILLS = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills')
+const USER_SKILLS = join(WORKSPACE, 'skills')
+mkdirSync(USER_SKILLS, { recursive: true })
+
+/**
+ * The video editor's folder (footage / references / export). Set by the
+ * installer; when it is set, the file tools may use it like any other root.
+ */
+const VIDEO_DIR = process.env.JARVIS_VIDEO_DIR?.trim() || ''
+
+const EXTRA_ROOTS = [
+  ...(process.env.JARVIS_FILE_ROOTS ?? '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean),
+  ...(VIDEO_DIR ? [VIDEO_DIR] : []),
+]
+
+const TOOL_ROOTS = fileRoots({
+  workspace: WORKSPACE,
+  extra: EXTRA_ROOTS,
 })
 
 /**
@@ -481,14 +507,47 @@ const PROMPT_TOOLS = `Using tools:
 - If a tool fails or isn't connected, one plain sentence saying so.
 - If you don't know, say you don't know.`
 
-const SYSTEM_PROMPT = [
-  PROMPT_CORE,
-  PROMPT_BLADES,
-  DISABLED.has('interface') ? '' : PROMPT_INTERFACE,
-  DISABLED.has('browser') ? '' : PROMPT_BROWSER,
-  DISABLED.has('camera') ? '' : PROMPT_EYES,
-  PROMPT_TOOLS,
-].join('')
+/**
+ * Built per connection rather than once, because the skills are read from
+ * disk each time: a skill saved during one session is in force from the next.
+ */
+const PROMPT_TIME = () => {
+  const now = new Date()
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  return (
+    `The local time at session start is ${now.toString()} (${zone}). ` +
+    `"Today", "tomorrow" and "this morning" mean this time zone.\n\n`
+  )
+}
+
+const systemPrompt = () => {
+  const skills = loadSkills({ builtinDir: BUILTIN_SKILLS, userDir: USER_SKILLS })
+  return [
+    PROMPT_CORE,
+    PROMPT_BLADES,
+    DISABLED.has('interface') ? '' : PROMPT_INTERFACE,
+    DISABLED.has('browser') ? '' : PROMPT_BROWSER,
+    DISABLED.has('camera') ? '' : PROMPT_EYES,
+    PROMPT_TIME(),
+    skillsPrompt(skills, {
+      allowWrites: ALLOW_WRITES,
+      accountConnectors: ACCOUNT_CONNECTORS,
+      vars: {
+        VIDEO_DIR: VIDEO_DIR || '(not set up — tell the user to run the installer)',
+        USER_SKILLS,
+        WORKSPACE,
+      },
+    }),
+    PROMPT_TOOLS,
+  ].join('')
+}
+
+{
+  const skills = loadSkills({ builtinDir: BUILTIN_SKILLS, userDir: USER_SKILLS })
+  console.log(
+    `[jarvis] ${skills.length} skills: ${skills.map((s) => s.name).join(', ') || 'none'}`,
+  )
+}
 
 /**
  * ElevenLabs credentials, borrowed from the MCP server config.
@@ -539,10 +598,7 @@ const FILE_ROOTS = [
   // still write it to /tmp. Dropping one of them loses real panels.
   tmpdir(),
   '/tmp',
-  ...(process.env.JARVIS_FILE_ROOTS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean),
+  ...EXTRA_ROOTS,
 ].map((root) => {
   try {
     return realpathSync(root)
@@ -1323,7 +1379,7 @@ wss.on('connection', (socket) => {
       // tuned for a coding agent — verbose, file-oriented, and a large chunk
       // of input tokens on every turn. Replacing it makes the persona stick,
       // keeps answers short enough to speak, and cuts cost per turn.
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: systemPrompt(),
       // Run from JARVIS's own workspace rather than the home directory. MCP
       // discovery does not depend on it — settingSources is empty and the
       // servers are passed in explicitly above — and file tools resolve
