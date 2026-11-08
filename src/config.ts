@@ -128,6 +128,12 @@ export const KOKORO_VOICE = choice(
   'bm_george',
 )
 
+/**
+ * When JARVIS gives the morning briefing on his own, as "HH:MM" local time.
+ * Unset or "off" means never — he still briefs you whenever you ask.
+ */
+export const BRIEFING_TIME = str(import.meta.env.VITE_BRIEFING_TIME) ?? ''
+
 export const env = {
   anthropicKey: str(import.meta.env.VITE_ANTHROPIC_API_KEY) ?? '',
   elevenKey: str(import.meta.env.VITE_ELEVENLABS_API_KEY) ?? '',

@@ -103,9 +103,25 @@ if (elSource) {
   line(info, '  Optional: add ELEVENLABS_API_KEY for a better voice and Scribe transcription. The free tier is enough for a demo.');
 }
 
+// --- FFmpeg, for the video-editor skill ----------------------------------
+try {
+  const res = spawnSync('ffmpeg', ['-version'], { encoding: 'utf8', timeout: 10000 });
+  if (res.status === 0) {
+    line(tick, `FFmpeg found: ${(res.stdout.split('\n')[0] || '').trim()}`);
+  } else {
+    throw new Error('no ffmpeg');
+  }
+} catch {
+  line(info, 'FFmpeg not found — everything works except the video-editor skill.');
+  line(info, '  Windows: winget install Gyan.FFmpeg   macOS: brew install ffmpeg   Linux: apt install ffmpeg');
+}
+
 // --- How to run ----------------------------------------------------------
 console.log('');
-console.log('To run JARVIS, open two terminals:');
+console.log('To run JARVIS:  npm start   (on Windows: the JARVIS shortcut, or start-jarvis.cmd)');
+console.log('To change voice, briefing time or connectors:  npm run configure');
+console.log('');
+console.log('Or, in two terminals:');
 console.log('  1)  npm run bridge      # the brain (Claude Code, headless)');
 console.log('  2)  npm run dev         # the face (open http://localhost:5173 in Chrome)');
 console.log('');
