@@ -62,6 +62,7 @@ npm_config_onnxruntime_node_install_cuda=skip npm install
 
 step "4/4  Settings"
 node scripts/configure.mjs
+node scripts/install-skills.mjs
 node scripts/setup.mjs
 
 printf '\n  \033[32mDone.\033[0m Start it with:  cd "%s" && npm start\n' "$dir"

@@ -141,6 +141,11 @@ Step "4/5  Sozlash (ovoz, pochta, ertalabki xulosa, video papka)"
 & node scripts/configure.mjs
 if ($LASTEXITCODE -ne 0) { Fail "Sozlash tugamadi." }
 
+# --- 4b. Claude skills -------------------------------------------------------
+Step "Claude skilllari (~/.claude/skills)"
+& node scripts/install-skills.mjs
+if ($LASTEXITCODE -ne 0) { Warn "Skilllar o'rnatilmadi. Keyin: npm run skills" }
+
 # --- 5. Shortcut ----------------------------------------------------------------
 Step "5/5  Ish stolida JARVIS yorlig'i"
 try {
