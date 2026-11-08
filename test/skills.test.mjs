@@ -99,3 +99,15 @@ test('the setup wizard updates its own lines and leaves the rest of .env.local a
   assert.equal(mergeEnv(after, { JARVIS_VOICE_ID: 'v' }), after)
   assert.ok(VOICES.every((v) => /^[A-Za-z0-9]{20}$/.test(v.id)))
 })
+
+test('every Claude skill in .claude/skills has a valid SKILL.md', async () => {
+  const { readdirSync, readFileSync } = await import('node:fs')
+  const dir = join(import.meta.dirname, '..', '.claude', 'skills')
+  const names = readdirSync(dir)
+  assert.ok(names.length >= 5)
+  for (const name of names) {
+    const s = parseSkill(readFileSync(join(dir, name, 'SKILL.md'), 'utf8'))
+    assert.equal(s.name, name, `${name}: front-matter name must match the folder`)
+    assert.ok(s.description.length > 40 && s.description.length < 1024, `${name}: description`)
+  }
+})

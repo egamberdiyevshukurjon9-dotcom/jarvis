@@ -215,6 +215,15 @@ skill JARVIS writes is in use from the next session. Every skill is part of the
 system prompt, so each is capped at 6 KB; `JARVIS_SKILLS` narrows the list
 (`none` turns them off).
 
+### Claude skills
+
+The same abilities also ship as Claude skills in `.claude/skills/`
+(`morning-briefing`, `ai-video-editor`, `video-style`, `animated-website`,
+`jarvis-install`). Claude Code picks them up inside this project; the installer
+copies them to `~/.claude/skills/` so they work everywhere (`npm run skills` to
+redo it). For claude.ai, zip a skill folder and upload it under Settings →
+Capabilities → Skills.
+
 ### JARVIS controls the interface
 
 He drives the UI through MCP tools the bridge exposes:
