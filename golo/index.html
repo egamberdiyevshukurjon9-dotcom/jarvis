@@ -199,13 +199,20 @@ button{cursor:pointer}
   background:var(--panel-solid);border:1px solid var(--line-strong);padding:10px 14px;font-size:13px;line-height:1.45;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center}
 #toast.show{opacity:1}
 
-#sheet{position:fixed;z-index:8;inset:auto 0 0 0;margin:0 auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(620px,calc(100vw - 32px));max-height:70vh;overflow:auto;padding:16px 18px;background:var(--panel-solid)}
-#sheet h3{margin:0 0 4px;font-family:var(--f-display);font-weight:700;letter-spacing:.14em;font-size:15px;text-transform:uppercase}
-#sheet .sub{margin:0 0 12px;color:var(--muted);font-size:12.5px}
+#sheet,#proj{position:fixed;z-index:8;inset:auto 0 0 0;margin:0 auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(620px,calc(100vw - 32px));max-height:70vh;overflow:auto;padding:16px 18px;background:var(--panel-solid)}
+#sheet h3,#proj h3{margin:0 0 4px;font-family:var(--f-display);font-weight:700;letter-spacing:.14em;font-size:15px;text-transform:uppercase}
+#sheet .sub,#proj .sub{margin:0 0 12px;color:var(--muted);font-size:12.5px}
 #sheet dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;margin:0 0 12px}
 #sheet dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--holo);text-transform:uppercase;padding-top:2px}
 #sheet dd{margin:0;font-size:13px;line-height:1.5}
-#sheet .close{float:right;background:none;border:1px solid var(--line);padding:4px 10px;font-family:var(--f-mono);font-size:11px}
+#proj .cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#proj .card{display:flex;flex-direction:column;gap:6px;text-align:left;background:rgba(111,228,255,.05);border:1px solid var(--line-strong);padding:12px;color:var(--ink);text-decoration:none}
+#proj .card:hover{background:rgba(111,228,255,.12)}
+#proj .card b{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.03em}
+#proj .card span{font-size:12.5px;line-height:1.45;color:var(--muted)}
+#proj .card em{font-style:normal;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;color:var(--holo);text-transform:uppercase}
+@media (max-width:560px){#proj .cards{grid-template-columns:1fr}}
+#sheet .close,#proj .close{float:right;background:none;border:1px solid var(--line);padding:4px 10px;font-family:var(--f-mono);font-size:11px}
 
 @media (max-width: 899px){
   .bar{gap:10px}
@@ -280,6 +287,7 @@ button{cursor:pointer}
       <div class="row">
         <button class="chip" id="labelsBtn" type="button" aria-pressed="false">Ёзувлар <em>ўчиқ</em></button>
         <button class="chip" id="ttsBtn" type="button" aria-pressed="true">Овозли жавоб <em>ёқиқ</em></button>
+        <button class="chip cta" id="projBtn" type="button">3D лойиҳалар</button>
         <button class="chip" id="snapBtn" type="button">Сурат</button>
         <button class="chip" id="fsBtn" type="button" hidden>Тўлиқ экран</button>
         <button class="chip" id="cmdBtn" type="button">Буйруқлар</button>
@@ -355,6 +363,13 @@ button{cursor:pointer}
   </div>
 </section>
 
+<section id="proj" class="panel sheetlike" hidden aria-label="3D лойиҳалар">
+  <button class="close" id="projClose" type="button">Ёпиш</button>
+  <h3>3D лойиҳалар</h3>
+  <p class="sub">Тўлиқ 3D саҳна очилади. Юқоридаги «✋ Қўл бошқаруви» тугмасини босинг: чимдиб айлантирасиз, икки қўл билан ичига кирасиз, икки кафтни ёйсангиз рентген ёқилади. «Ичига» ва «Рентген» тугмалари сичқонча билан ҳам ишлайди.</p>
+  <div class="cards" id="projCards"></div>
+</section>
+
 <section id="sheet" class="panel" hidden aria-label="Овозли буйруқлар">
   <button class="close" id="sheetClose" type="button">Ёпиш</button>
   <h3>Овозли буйруқлар</h3>
@@ -364,6 +379,7 @@ button{cursor:pointer}
     <dt>Модел</dt><dd>«атом», «сув», «карбонат ангидрид» (CO₂), «бензол», «ДНК», «атмосфера», «метан», «озон молекуласи», «аммиак», «ош тузи» (NaCl кристали), «кейинги», «олдинги»</dd>
     <dt>Ҳаракат</dt><dd>«ажрат», «йиғ», «катталаштир», «кичрайтир», «айлан», «тўхта», «жойига қайтар»</dd>
     <dt>Кўриниш</dt><dd>«камера», «кўзгу», «қора-оқ», «ёзувлар», «сурат ол»</dd>
+    <dt>3D лойиҳалар</dt><dd>«лойиҳалар», «АГС ҳид назорати», «экомун лаборатория», «яшил белбоғ», «Орол NbS» — тўлиқ саҳнани қўл бошқаруви билан очади.</dd>
     <dt>Ўрганиш</dt><dd>«тест» ёки «савол бер» — шу модел бўйича тест, жавоб: «биринчи», «иккинчи», «учинчи». «Саёҳат» — Жарвис ҳамма моделларни ўзи кўрсатиб, тушунтириб чиқади. «Тўхта» — саёҳатни тўхтатади.</dd>
     <dt>Ҳисоблагич</dt><dd>Формула ёзинг: «H2SO4 моляр массаси», «Ca(OH)2 массаси», «CuSO4·5H2O массаси». Интернетсиз ҳам ишлайди.</dd>
     <dt>Сенсор</dt><dd>Қисмни бир марта босинг — маълумоти очилиб туради. ↑ ↓ тугмалари — қисмлар бўйича юриш, Q — тест, T — саёҳат, P — сурат.</dd>
@@ -1075,7 +1091,7 @@ addEventListener('keydown', e => {
   else if (k === 'q' || k === 'Q' || k === 'й' || k === 'Й') openQuiz();
   else if (k === 't' || k === 'T' || k === 'е' || k === 'Е') toggleTour();
   else if (k === 'p' || k === 'P' || k === 'з' || k === 'З') snapshot();
-  else if (k === 'Escape') { $('#sheet').hidden = true; closeQuiz(); state.pinned = null; if (tour.on) stopTour(); }
+  else if (k === 'Escape') { $('#sheet').hidden = true; $('#proj').hidden = true; closeQuiz(); state.pinned = null; if (tour.on) stopTour(); }
 });
 
 /* ---------------- camera + hand tracking ---------------- */
@@ -1415,6 +1431,10 @@ function handleUtterance(raw, src = 'voice') {
   $('#youSaid').textContent = '«' + text + '»';
   let t = norm(text).replace(/\b(d?jarvis|jarviz|djarvis|jarvic)\b/g, ' ').replace(/\s+/g, ' ').trim();
   if (!t) { say('Эшитаман.'); return; }
+  // 3D project scenes: «Орол NbS ни оч», «лойиҳалар»
+  const proj = PROJECTS.find(p => p.rx.test(t));
+  if (proj && !/\?/.test(text) && (/\b(och|korsat|kir|yoq)/.test(t) || t.split(' ').length <= 3)) { say(proj.name + ' очилмоқда.'); setTimeout(() => openProject(proj.id), 500); return; }
+  if (/\bloyiha/.test(t)) { $('#proj').hidden = false; say('3D лойиҳалар рўйхати очилди.'); return; }
   // quiz answers by voice: «биринчи», «иккинчи», «учинчи»
   if (quiz.open && !quiz.done && RX.ans.test(t)) { const w = t.split(' ')[0]; answerQuiz(/^(bir|1|a|perv|first)/.test(w) ? 0 : /^(ikki|2|b|vtor|second)/.test(w) ? 1 : 2); return; }
   // offline molar-mass calculator: «H2SO4 моляр массаси»
@@ -1841,6 +1861,31 @@ function saveSnapshot() {
     }, 'image/png');
   } catch (e) { toast('Суратни сақлаб бўлмади (камера тасвири ҳимояланган бўлиши мумкин).'); }
 }
+
+/* ---------------- 3D project scenes (separate pages with hand control) ---------------- */
+const PROJECTS = [
+  { id: 'ags', file: 'scenes/ags.html', name: 'АГС ҳид назорати', tag: 'Биофильтр · кўмир фильтри', desc: 'Оқова сув иншоотидан чиқадиган ҳидни йиғиб тозалаш тизими: вентилятор, намлагич, биофильтр, кўмир фильтри ва қувур. Ичига кириб ҳар бир босқични кўринг.', rx: /\bags\b|\bhid naz|\bhid tozal|\bbiofiltr/ },
+  { id: 'lab', file: 'scenes/ekomun-lab.html', name: 'Экомун лаборатория хонаси', tag: 'Титрлаш · 196 модда', desc: 'Виртуал кимё хонаси: реагентлар жавони, титрлаш, тортиш шкафи, асбоблар ва хавфсизлик жиҳозлари.', rx: /\bekomun|\blaborator|\btitrla/ },
+  { id: 'belt', file: 'scenes/yashil-belbog.html', name: 'Яшил белбоғ', tag: 'Орол туби · гидрогел', desc: 'Оролнинг қуриган тубидаги яшил белбоғ: бўрон, дрон билан экиш, гидрогел кесими, мониторинг ва смета.', rx: /\byashil belbog|\bbelbog/ },
+  { id: 'aral', file: 'scenes/orol-nbs.html', name: 'Орол NbS кластери', tag: 'Табиатга асосланган ечим', desc: 'Белбоғ, йўл ҳимояси, сув тозалаш, ботқоқ ва боғ, углерод ва dMRV, кўникмалар — бутун кластер.', rx: /\borol|\baral|\bnbs\b|\bklaster/ }
+];
+(function renderProjects() {
+  const box = $('#projCards');
+  PROJECTS.forEach(p => {
+    const a = document.createElement('a'); a.className = 'card'; a.dataset.air = '1';
+    a.innerHTML = '<em></em><b></b><span></span>';
+    a.querySelector('em').textContent = p.tag; a.querySelector('b').textContent = p.name; a.querySelector('span').textContent = p.desc;
+    a.href = p.file; a.addEventListener('click', e => { e.preventDefault(); openProject(p.id); });
+    box.appendChild(a);
+  });
+})();
+function openProject(id) {
+  const p = PROJECTS.find(x => x.id === id); if (!p) return;
+  stopSpeaking(); if (tour.on) stopTour();
+  location.href = p.file + (state.camOn ? '?hand=1' : '');
+}
+$('#projBtn').addEventListener('click', () => { $('#sheet').hidden = true; closeQuiz(); $('#proj').hidden = !$('#proj').hidden; });
+$('#projClose').addEventListener('click', () => { $('#proj').hidden = true; });
 
 /* ---------------- render loop ---------------- */
 let last = performance.now(), fpsAcc = 0, fpsN = 0, statusT = 0;
