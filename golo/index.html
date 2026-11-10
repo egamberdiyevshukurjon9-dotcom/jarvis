@@ -2,7 +2,6 @@
 <meta name="theme-color" content="#02070d"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Жарвис">
 <meta name="description" content="Жарвис Голо Лаб: қўл ишоралари ва ўзбекча овоз билан бошқариладиган кимё ва экология голограммалари.">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Жарвис Голо Лаб</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,7 +101,7 @@ button{cursor:pointer}
 .models{width:270px;max-height:100%;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
 .ph{font-family:var(--f-mono);font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between}
 .mlist{display:flex;flex-direction:column;gap:4px}
-.mlist button{display:grid;grid-template-columns:52px 1fr;align-items:baseline;gap:8px;text-align:left;background:none;border:1px solid transparent;padding:7px 8px}
+.mlist button{display:grid;grid-template-columns:52px 1fr;align-items:baseline;gap:8px;text-align:left;background:none;border:1px solid transparent;padding:5px 8px}
 .mlist button .f{font-family:var(--f-mono);font-size:12px;color:var(--holo)}
 .mlist button .n{font-size:13px}
 .mlist button:hover{border-color:var(--line)}
@@ -112,10 +111,27 @@ button{cursor:pointer}
 .facts dt{color:var(--muted);font-size:12px}
 .facts dd{margin:0;text-align:right;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
 .blurb{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5}
-.acts{display:flex;gap:6px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .btn{flex:1;background:none;border:1px solid var(--line-strong);padding:8px 10px;font-family:var(--f-display);font-weight:700;letter-spacing:.12em;font-size:12px;text-transform:uppercase}
 .btn:hover{background:rgba(111,228,255,.08)}
 .btn.primary[aria-pressed="true"]{border-color:var(--active);color:var(--active)}
+.btn.on{border-color:var(--active);color:var(--active)}
+.score{font-family:var(--f-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.score b{color:var(--ink);font-weight:500}
+
+#quiz{position:fixed;z-index:8;inset:auto 0 0 0;margin:0 auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - 32px));max-height:72vh;overflow:auto;padding:16px 18px;background:var(--panel-solid);border-color:var(--line-strong)}
+#quiz .ph{margin-bottom:10px}
+#quiz h3{margin:0 0 12px;font-family:var(--f-display);font-weight:700;font-size:17px;line-height:1.35;letter-spacing:.02em}
+#quiz .opts{display:grid;gap:6px}
+#quiz .opts button{display:flex;gap:10px;align-items:baseline;text-align:left;background:none;border:1px solid var(--line-strong);padding:9px 12px;font-size:14px}
+#quiz .opts button span{font-family:var(--f-mono);font-size:11px;color:var(--holo)}
+#quiz .opts button:hover:not(:disabled){background:rgba(111,228,255,.08)}
+#quiz .opts button.ok{border-color:var(--holo);background:rgba(111,228,255,.14)}
+#quiz .opts button.bad{border-color:var(--alert);background:rgba(255,107,122,.12)}
+#quiz .opts button:disabled{cursor:default}
+#quiz .fb{margin:10px 0 0;font-size:13px;line-height:1.5;min-height:1.5em}
+#quiz .fb.ok{color:var(--holo)} #quiz .fb.bad{color:#ffb3bc}
+#quiz .acts{margin-top:12px}
 
 .ppanel{width:250px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .meter{display:grid;gap:4px}
@@ -203,6 +219,9 @@ button{cursor:pointer}
   .mlist button{grid-template-columns:auto;flex:none;border-color:var(--line);padding:6px 10px}
   .mlist button .n{display:none}
   .models .blurb{display:none}
+  .models .score{display:none}
+  .models .acts{grid-template-columns:repeat(4,1fr)}
+  .models .acts .btn{padding:7px 4px;font-size:11px;letter-spacing:.06em}
   .facts{grid-template-columns:auto 1fr auto 1fr}
   .ppanel{width:100%}
   .chat{width:100%;max-height:48vh}
@@ -261,6 +280,8 @@ button{cursor:pointer}
       <div class="row">
         <button class="chip" id="labelsBtn" type="button" aria-pressed="false">Ёзувлар <em>ўчиқ</em></button>
         <button class="chip" id="ttsBtn" type="button" aria-pressed="true">Овозли жавоб <em>ёқиқ</em></button>
+        <button class="chip" id="snapBtn" type="button">Сурат</button>
+        <button class="chip" id="fsBtn" type="button" hidden>Тўлиқ экран</button>
         <button class="chip" id="cmdBtn" type="button">Буйруқлар</button>
       </div>
       <label class="chip dim" id="dimWrap" hidden>Хиралик <input id="dim" type="range" min="0" max="85" value="40" aria-label="Камера хиралиги"><em id="dimVal">40%</em></label>
@@ -269,14 +290,17 @@ button{cursor:pointer}
 
   <div class="mid">
     <aside class="panel models" id="modelPanel" aria-label="Моделлар">
-      <div class="ph"><span>Моделлар</span><span id="mIdx">1 / 6</span></div>
+      <div class="ph"><span>Моделлар</span><span id="mIdx">1 / 10</span></div>
       <div class="mlist" id="mlist"></div>
       <p class="blurb" id="mBlurb"></p>
       <dl class="facts" id="mFacts"></dl>
       <div class="acts">
         <button class="btn primary" id="explodeBtn" type="button" aria-pressed="false">Ажратиш</button>
         <button class="btn" id="resetBtn" type="button">Жойига</button>
+        <button class="btn" id="quizBtn" type="button">Тест</button>
+        <button class="btn" id="tourBtn" type="button" aria-pressed="false">Саёҳат</button>
       </div>
+      <p class="score" id="scoreLine"></p>
     </aside>
     <aside class="panel ppanel" id="partPanel" hidden aria-label="Зарралар ҳолати">
       <div class="ph"><span>Зарралар шари</span><span>9 000</span></div>
@@ -320,15 +344,29 @@ button{cursor:pointer}
 <canvas id="fx"></canvas>
 <div id="toast" role="status" aria-live="polite"></div>
 
+<section id="quiz" class="panel" hidden aria-label="Тест">
+  <div class="ph"><span id="qModel">Тест</span><span id="qScore"></span></div>
+  <h3 id="qText"></h3>
+  <div class="opts" id="qOpts"></div>
+  <p class="fb" id="qFb" aria-live="polite"></p>
+  <div class="acts">
+    <button class="btn primary" id="qNext" type="button">Кейинги савол</button>
+    <button class="btn" id="qClose" type="button">Ёпиш</button>
+  </div>
+</section>
+
 <section id="sheet" class="panel" hidden aria-label="Овозли буйруқлар">
   <button class="close" id="sheetClose" type="button">Ёпиш</button>
   <h3>Овозли буйруқлар</h3>
   <p class="sub">Микрофонни босинг ва гапиринг. «Жарвис» деб бошлаш шарт эмас. Бир гапда бир нечта буйруқ айтиш мумкин: «атомни кўрсат ва ажрат».</p>
   <dl>
     <dt>Режим</dt><dd>«голограмма», «зарралар», «агентлар»</dd>
-    <dt>Модел</dt><dd>«атом», «сув», «карбонат ангидрид» (CO₂), «бензол», «ДНК», «атмосфера», «кейинги», «олдинги»</dd>
+    <dt>Модел</dt><dd>«атом», «сув», «карбонат ангидрид» (CO₂), «бензол», «ДНК», «атмосфера», «метан», «озон молекуласи», «аммиак», «ош тузи» (NaCl кристали), «кейинги», «олдинги»</dd>
     <dt>Ҳаракат</dt><dd>«ажрат», «йиғ», «катталаштир», «кичрайтир», «айлан», «тўхта», «жойига қайтар»</dd>
-    <dt>Кўриниш</dt><dd>«камера», «кўзгу», «қора-оқ», «ёзувлар»</dd>
+    <dt>Кўриниш</dt><dd>«камера», «кўзгу», «қора-оқ», «ёзувлар», «сурат ол»</dd>
+    <dt>Ўрганиш</dt><dd>«тест» ёки «савол бер» — шу модел бўйича тест, жавоб: «биринчи», «иккинчи», «учинчи». «Саёҳат» — Жарвис ҳамма моделларни ўзи кўрсатиб, тушунтириб чиқади. «Тўхта» — саёҳатни тўхтатади.</dd>
+    <dt>Ҳисоблагич</dt><dd>Формула ёзинг: «H2SO4 моляр массаси», «Ca(OH)2 массаси», «CuSO4·5H2O массаси». Интернетсиз ҳам ишлайди.</dd>
+    <dt>Сенсор</dt><dd>Қисмни бир марта босинг — маълумоти очилиб туради. ↑ ↓ тугмалари — қисмлар бўйича юриш, Q — тест, T — саёҳат, P — сурат.</dd>
     <dt>Скиллар</dt><dd>14 та скилл агенти: «тонгги брифинг», «эртага менда нима бор?», «Анатомия, сув молекуласини кўрсат», «Маркетинг, пост ёз», «Устоз, тест бер», «Google, мақола файлимни топ», «Скилл яратувчи, янги скилл ғояси».</dd>
     <dt>Мутахассислар</dt><dd>Номи билан савол беринг: «Кимёгар, нега сув қутбли?», «Эколог, озон қатлами нима?»</dd>
     <dt>Қўл ишоралари</dt><dd>Чимдиш (бош ва кўрсаткич бармоқ) — айлантириш ёки тугмани босиш. Икки қўл билан чимдиш — катталаштириш. Мушт — силжитиш. Икки кафтни тез ёйиш — ажратиш, чапак — йиғиш. Чимдиб 1,5 сония ушлаб туриш ҳам ажратади ёки йиғади.</dd>
@@ -355,8 +393,14 @@ const state = {
   mirror: true, bw: false, dim: .4, ttsOn: true, autoRotate: !REDUCED,
   camOn: false, zoom: 1, zoomS: 1, move: new V3(), moveS: new V3(),
   rotX: -.18, rotY: .5, rotXS: -.18, rotYS: .5, lastTouch: 0, hover: null,
-  agent: 'jarvis', fps: 60, appear: 1, handTTL: 500
+  agent: 'jarvis', fps: 60, appear: 1, handTTL: 500, pinned: null, snap: false
 };
+/* remembered between visits: last model and view toggles */
+const PREFS_KEY = 'jarvis-golo-prefs';
+let prefs = {}; try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch (e) { prefs = {}; }
+function savePrefs() {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ model: DEFS[state.model]?.id, labels: state.labels, tts: state.ttsOn, mirror: state.mirror, bw: state.bw, dim: Math.round(state.dim * 100), score: quizScore })); } catch (e) { }
+}
 
 /* ---------------- three setup ---------------- */
 const glCanvas = $('#gl');
@@ -371,7 +415,8 @@ const U = { time: { value: 0 }, fade: { value: 1 } };
 const COL = {
   holo: 0x6fe4ff, proton: 0xff9a72, neutron: 0x8fb4ff, electron: 0x8ff3ff, oxygen: 0xff7088, hydrogen: 0xe4f9ff,
   carbon: 0x7fdcff, pi: 0xa894ff, earth: 0x3fb8ff, tropo: 0x6fe4ff, strato: 0x55c4ff, ozone: 0xb48cff, meso: 0x4f9dff,
-  thermo: 0x8f7dff, A: 0x7fe8ff, T: 0x4fb0ff, G: 0xb79bff, C: 0xff8fd6, amber: 0xffb547
+  thermo: 0x8f7dff, A: 0x7fe8ff, T: 0x4fb0ff, G: 0xb79bff, C: 0xff8fd6, amber: 0xffb547,
+  nitrogen: 0x8fa8ff, sodium: 0xc49bff, chlorine: 0x7dffb0
 };
 
 function holoMat(color, opacity = .9) {
@@ -614,7 +659,98 @@ const ATMOS = {
   }
 };
 
-const DEFS = [ATOM, WATER, CO2, BENZENE, DNA, ATMOS];
+/* ---- 7. Methane ---- */
+const METHANE = {
+  id: 'methane', name: 'Метан', short: 'Метан', formula: 'CH₄', fit: 2.0,
+  blurb: 'Тетраэдр шаклидаги молекула. Табиий газнинг асоси ва кучли иссиқхона гази.',
+  facts: [['H–C–H бурчаги', '109,5°'], ['C–H боғ узунлиги', '1,09 Å'], ['Моляр масса', '16,04 г/моль'], ['Иссиқхона кучи', '≈ 28 × CO₂ (100 йил)']],
+  build(m) {
+    const L = 1.45, C = new V3();
+    const cg = new THREE.Group(); cg.add(sphere(.46, COL.carbon, 30)); cg.add(wire(.46, COL.carbon, .18, m));
+    m.add(cg, { name: 'Углерод (C)', info: ['sp³ гибридланган', '4 та бир хил σ-боғ', 'Боғлар бир-биридан энг узоқда: тетраэдр'], dir: new V3(0, 1, .3), dist: 1.0 });
+    const dirs = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]].map(v => new V3(...v).normalize());
+    const hs = [];
+    dirs.forEach((u, i) => {
+      const H = u.clone().multiplyScalar(L); hs.push(H);
+      const g = new THREE.Group(); const h = sphere(.3, COL.hydrogen, 24); h.position.copy(H); g.add(h);
+      g.add(cyl(C, H, .06, COL.holo, .7));
+      m.add(g, { name: `Водород H${i + 1} ва C–H боғи`, info: ['C–H боғи 1,09 Å, деярли қутбсиз', 'Ҳамма H–C–H бурчаклари 109,5°'], dir: u, dist: 1.2 });
+    });
+    const edges = []; for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) edges.push(hs[i], hs[j]);
+    m.deco(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(edges), lineMat(COL.amber, .45)));
+  }
+};
+
+/* ---- 8. Ozone ---- */
+const OZONE = {
+  id: 'ozone', name: 'Озон молекуласи', short: 'Озон', formula: 'O₃', fit: 1.75,
+  blurb: 'Уч кислород атоми, бурчакли шакл. Юқорида бизни ультрабинафша нурдан ҳимоя қилади, ер юзасида эса ифлослантирувчи.',
+  facts: [['O–O–O бурчаги', '116,8°'], ['O–O боғ узунлиги', '1,28 Å (иккаласи тенг)'], ['Моляр масса', '48,00 г/моль'], ['Стратосферада', 'озоннинг ≈ 90%']],
+  build(m) {
+    const L = 1.45, half = THREE.MathUtils.degToRad(116.8 / 2), O = new V3(0, .4, 0);
+    const og = new THREE.Group(); const os = sphere(.48, COL.oxygen, 30); os.position.copy(O); og.add(os);
+    const lobe = sphere(.15, COL.oxygen, 16, .5); lobe.scale.set(1, 1.7, 1); lobe.position.set(O.x, O.y + .6, 0); og.add(lobe);
+    m.add(og, { name: 'Марказий кислород', info: ['Битта бўлинмаган электрон жуфти', 'Қисман мусбат заряд δ+', 'Шу жуфт туфайли молекула эгилган'], dir: new V3(0, 1, .2), dist: 1.1 });
+    [-1, 1].forEach((sx, i) => {
+      const T = new V3(O.x + sx * Math.sin(half) * L, O.y - Math.cos(half) * L, 0);
+      const g = new THREE.Group(); const ts = sphere(.48, COL.oxygen, 30); ts.position.copy(T); g.add(ts);
+      g.add(cyl(O, T, .055, COL.holo, .75));
+      const off = new V3(Math.cos(half), sx * Math.sin(half), 0).multiplyScalar(.09 * -sx);
+      g.add(cyl(O.clone().add(off), T.clone().add(off), .03, COL.amber, .45));
+      m.add(g, { name: `Чекка кислород O${i ? '₃' : '₁'}`, info: ['Боғ «бир ярим»: резонанс', 'O–O узунлиги 1,28 Å', 'Қисман манфий заряд δ−'], dir: new V3().subVectors(T, O), dist: 1.2 });
+    });
+    const uv = []; for (let i = 0; i <= 60; i++) { const x = -3.4 + i * .045; uv.push(new V3(x, 2.1 - i * .03 + Math.sin(i * .9) * .12, 0)); }
+    m.deco(new THREE.Line(new THREE.BufferGeometry().setFromPoints(uv), lineMat(COL.ozone, .8)));
+  }
+};
+
+/* ---- 9. Ammonia ---- */
+const AMMONIA = {
+  id: 'ammonia', name: 'Аммиак', short: 'Аммиак', formula: 'NH₃', fit: 1.75,
+  blurb: 'Учбурчакли пирамида: тепада азотнинг бўлинмаган электрон жуфти. Ўғитлар ишлаб чиқаришнинг асоси.',
+  facts: [['H–N–H бурчаги', '107°'], ['N–H боғ узунлиги', '1,01 Å'], ['Моляр масса', '17,03 г/моль'], ['Қайнаш ҳарорати', '−33 °C']],
+  build(m) {
+    const L = 1.4, alpha = THREE.MathUtils.degToRad(107);
+    const sb = Math.sqrt((1 - Math.cos(alpha)) / 1.5), cb = Math.sqrt(1 - sb * sb);
+    const N = new V3(0, .45, 0);
+    const ng = new THREE.Group(); const ns = sphere(.5, COL.nitrogen, 30); ns.position.copy(N); ng.add(ns);
+    const lp = sphere(.2, COL.nitrogen, 18, .5); lp.scale.set(1, 1.8, 1); lp.position.set(N.x, N.y + .72, 0); ng.add(lp);
+    m.add(ng, { name: 'Азот (N)', info: ['Электроманфийлиги 3,04', 'Бўлинмаган электрон жуфти — тепада', 'Шу жуфт туфайли аммиак асос: H⁺ ни бириктиради'], dir: new V3(0, 1, .2), dist: 1.1 });
+    for (let i = 0; i < 3; i++) {
+      const ph = i * Math.PI * 2 / 3 + Math.PI / 2;
+      const u = new V3(sb * Math.cos(ph), -cb, sb * Math.sin(ph));
+      const H = N.clone().addScaledVector(u, L);
+      const g = new THREE.Group(); const hs = sphere(.3, COL.hydrogen, 24); hs.position.copy(H); g.add(hs);
+      g.add(cyl(N, H, .06, COL.holo, .7));
+      m.add(g, { name: `Водород H${i + 1} ва N–H боғи`, info: ['N–H боғи 1,01 Å, қутбли', 'Молекулалар орасида водород боғи ҳосил қилади'], dir: u, dist: 1.2 });
+    }
+  }
+};
+
+/* ---- 10. Table salt crystal ---- */
+const NACL = {
+  id: 'nacl', name: 'Ош тузи кристали', short: 'NaCl', formula: 'NaCl', fit: 1.85,
+  blurb: 'Ион панжара: Na⁺ ва Cl⁻ ионлари навбатма-навбат жойлашган куб. Ажратилганда панжара кенгаяди.',
+  facts: [['Панжара', 'кубик, 6 қўшни'], ['Na–Cl масофаси', '2,82 Å'], ['Суюқланиш', '801 °C'], ['Моляр масса', '58,44 г/моль']],
+  build(m) {
+    const a = .82, na = new THREE.Group(), cl = new THREE.Group(), grid = [];
+    for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+      const isNa = (x + y + z) % 2 !== 0;
+      const s = isNa ? sphere(.17, COL.sodium, 18) : sphere(.3, COL.chlorine, 22);
+      s.position.set(x * a, y * a, z * a); s.userData.home = s.position.clone(); (isNa ? na : cl).add(s);
+    }
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+      grid.push(new V3(-a, i * a, j * a), new V3(a, i * a, j * a), new V3(i * a, -a, j * a), new V3(i * a, a, j * a), new V3(i * a, j * a, -a), new V3(i * a, j * a, a));
+    }
+    m.deco(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(grid), lineMat(COL.holo, .3)));
+    const spread = (g, k) => t => g.children.forEach(c => c.position.copy(c.userData.home).multiplyScalar(1 + t * k));
+    const pn = m.add(na, { name: 'Na⁺ ионлари', info: ['Натрий битта электронини берган', 'Кичикроқ: радиуси ≈ 1,02 Å', 'Ҳар бир Na⁺ атрофида 6 та Cl⁻'], dir: new V3(), dist: 0, anchor: new V3(a, 0, 0) });
+    const pc = m.add(cl, { name: 'Cl⁻ ионлари', info: ['Хлор битта электрон олган', 'Каттароқ: радиуси ≈ 1,81 Å', 'Ион боғи — қарама-қарши зарядлар тортишуви'], dir: new V3(), dist: 0, anchor: new V3(a, a, 0) });
+    pn.apply = spread(na, .55); pc.apply = spread(cl, .55);
+  }
+};
+
+const DEFS = [ATOM, WATER, CO2, BENZENE, DNA, ATMOS, METHANE, OZONE, AMMONIA, NACL];
 const MODELS = DEFS.map(makeModel);
 MODELS.forEach(m => { if (m.tilt) m.group.rotation.x = m.tilt; });
 
@@ -640,8 +776,8 @@ function mountModel(i) {
   if (current) root.remove(current.group);
   current = MODELS[i]; state.model = i;
   root.add(current.group);
-  state.appear = 0; state.hover = null;
-  buildLabels(); renderModelPanel();
+  state.appear = 0; state.hover = null; state.pinned = null;
+  buildLabels(); renderModelPanel(); savePrefs();
 }
 
 /* ---------------- particles ---------------- */
@@ -755,6 +891,13 @@ function pickAt(x, y) {
   return null;
 }
 let hoverSrc = { x: null, y: null };
+/* tap or click on a part pins its info card (touch screens have no hover); tap on empty space unpins */
+function pinAt(x, y) { const p = pickAt(x, y); state.pinned = p; if (p) sfx.tick(); }
+function cyclePart(step) {
+  if (state.mode !== 'hologram' || !current) return;
+  const n = current.parts.length, i = current.parts.indexOf(state.pinned);
+  state.pinned = current.parts[((i < 0 ? (step > 0 ? -1 : 0) : i) + step + n) % n]; sfx.tick(); touch();
+}
 function screenToWorld(x, y, z = 0) {
   ndc.set(x / W * 2 - 1, -(y / H) * 2 + 1); ray.setFromCamera(ndc, camera);
   const pt = new V3(); ray.ray.intersectPlane(new THREE.Plane(new V3(0, 0, 1), -z), pt); return pt;
@@ -819,11 +962,19 @@ function setChip(btn, on, onTxt = 'ёқиқ', offTxt = 'ўчиқ') { btn.setAttr
 $('#mirrorBtn').addEventListener('click', () => toggleMirror());
 $('#bwBtn').addEventListener('click', () => toggleBW());
 $('#labelsBtn').addEventListener('click', () => toggleLabels());
-$('#ttsBtn').addEventListener('click', () => { state.ttsOn = !state.ttsOn; setChip($('#ttsBtn'), state.ttsOn); if (!state.ttsOn) stopSpeaking(); });
-function toggleMirror(v = !state.mirror) { state.mirror = v; setChip($('#mirrorBtn'), v); $('#cam').classList.toggle('mirror', v); }
-function toggleBW(v = !state.bw) { state.bw = v; setChip($('#bwBtn'), v); $('#cam').classList.toggle('bw', v); }
-function toggleLabels(v = !state.labels) { state.labels = v; setChip($('#labelsBtn'), v); }
-$('#dim').addEventListener('input', e => { state.dim = e.target.value / 100; $('#dimVal').textContent = e.target.value + '%'; $('#shade').style.opacity = state.camOn ? state.dim : 0; });
+$('#ttsBtn').addEventListener('click', () => { state.ttsOn = !state.ttsOn; setChip($('#ttsBtn'), state.ttsOn); if (!state.ttsOn) stopSpeaking(); savePrefs(); });
+function toggleMirror(v = !state.mirror) { state.mirror = v; setChip($('#mirrorBtn'), v); $('#cam').classList.toggle('mirror', v); savePrefs(); }
+function toggleBW(v = !state.bw) { state.bw = v; setChip($('#bwBtn'), v); $('#cam').classList.toggle('bw', v); savePrefs(); }
+function toggleLabels(v = !state.labels) { state.labels = v; setChip($('#labelsBtn'), v); savePrefs(); }
+function setDim(v) { state.dim = v / 100; $('#dim').value = v; $('#dimVal').textContent = v + '%'; $('#shade').style.opacity = state.camOn ? state.dim : 0; }
+$('#dim').addEventListener('input', e => { setDim(+e.target.value); savePrefs(); });
+$('#snapBtn').addEventListener('click', () => snapshot());
+const fsBtn = $('#fsBtn');
+if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
+  fsBtn.hidden = false;
+  fsBtn.addEventListener('click', () => { (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => toast('Тўлиқ экранга ўтиб бўлмади.')); });
+  document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? 'Экрандан чиқиш' : 'Тўлиқ экран'; });
+}
 $('#cmdBtn').addEventListener('click', () => { $('#sheet').hidden = !$('#sheet').hidden; });
 $('#sheetClose').addEventListener('click', () => { $('#sheet').hidden = true; });
 
@@ -834,7 +985,7 @@ function renderHelp() {
   const cam = state.camOn; const h = $('#help');
   const txt = {
     hologram: cam ? [['Чимдиш', 'айлантириш'], ['Икки қўл чимдиш', 'катталаштириш'], ['Мушт', 'силжитиш'], ['Кафтларни ёйиш', 'ажратиш'], ['Чапак', 'йиғиш'], ['Кўрсаткич', 'қисм ҳақида']]
-      : [['Суриш', 'айлантириш'], ['Ғилдирак', 'катталаштириш'], ['Shift + суриш', 'силжитиш'], ['Икки марта босиш', 'ажратиш/йиғиш'], ['← →', 'модел'], ['E', 'ажратиш']],
+      : [['Суриш', 'айлантириш'], ['Ғилдирак', 'катталаштириш'], ['Қисмни босиш', 'маълумот'], ['Икки марта босиш', 'ажратиш/йиғиш'], ['← →', 'модел'], ['↑ ↓', 'қисмлар'], ['Q', 'тест'], ['T', 'саёҳат']],
     particles: cam ? [['Кафтни очинг', 'тарқатиш'], ['Мушт', 'йиғиш'], ['Чимдиш', 'гирдоб'], ['Икки қўл', 'ўлчам']]
       : [['Сичқонча', 'марказ'], ['Босиб туриш', 'йиғиш'], ['Ғилдирак', 'тарқатиш'], ['Space', 'микрофон']],
     agents: cam ? [['Кўрсаткич', 'агентни танлаш'], ['Чимдиш', 'босиш'], ['Овоз', 'савол бериш']]
@@ -877,7 +1028,8 @@ glCanvas.addEventListener('pointerdown', e => {
   glCanvas.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = { d: dist2(a, b), z: state.zoom }; drag = null; return; }
-  drag = { x: e.clientX, y: e.clientY, move: e.button === 2 || e.shiftKey };
+  drag = { x: e.clientX, y: e.clientY, move: e.button === 2 || e.shiftKey, x0: e.clientX, y0: e.clientY, t0: performance.now() };
+  if (tour.on) stopTour();
   if (state.mode === 'particles') { P.held = true; P.tSpread = 0; P.tVortex = .6; }
   touch();
 });
@@ -893,6 +1045,7 @@ glCanvas.addEventListener('pointermove', e => {
   touch();
 });
 const endPtr = e => {
+  if (e.type === 'pointerup' && drag && ptrs.size === 1 && state.mode === 'hologram' && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8 && performance.now() - drag.t0 < 400) pinAt(e.clientX, e.clientY);
   ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) drag = null;
   if (state.mode === 'particles') { P.held = false; P.tSpread = P.base; P.tVortex = 0; }
   if (e.pointerType !== 'mouse') hoverSrc = { x: null, y: null };
@@ -910,6 +1063,7 @@ addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input, select, textarea')) return;
   const k = e.key;
   if (k === ' ') { e.preventDefault(); micToggle(); return; }
+  if (quiz.open && /^[1-3]$/.test(k)) { answerQuiz(+k - 1); return; }
   if (k === '1') setMode('hologram'); else if (k === '2') setMode('particles'); else if (k === '3') setMode('agents');
   else if (k === 'e' || k === 'E' || k === 'у' || k === 'У') setExploded(!state.exploded);
   else if (k === 'ArrowRight') showModel(state.model + 1); else if (k === 'ArrowLeft') showModel(state.model - 1);
@@ -917,7 +1071,11 @@ addEventListener('keydown', e => {
   else if (k === 'b' || k === 'B' || k === 'и' || k === 'И') toggleBW();
   else if (k === 'f' || k === 'F' || k === 'а' || k === 'А') toggleMirror();
   else if (k === 'l' || k === 'L' || k === 'д' || k === 'Д') toggleLabels();
-  else if (k === 'Escape') { $('#sheet').hidden = true; }
+  else if (k === 'ArrowDown') { e.preventDefault(); cyclePart(1); } else if (k === 'ArrowUp') { e.preventDefault(); cyclePart(-1); }
+  else if (k === 'q' || k === 'Q' || k === 'й' || k === 'Й') openQuiz();
+  else if (k === 't' || k === 'T' || k === 'е' || k === 'Е') toggleTour();
+  else if (k === 'p' || k === 'P' || k === 'з' || k === 'З') snapshot();
+  else if (k === 'Escape') { $('#sheet').hidden = true; closeQuiz(); state.pinned = null; if (tour.on) stopTour(); }
 });
 
 /* ---------------- camera + hand tracking ---------------- */
@@ -1088,7 +1246,7 @@ const airFlash = [];
 // Skill agents mirror the user's Claude skills; experts are subject specialists. tools: holo = hologram control, cal/mail/drive = Google connectors
 const JARVIS = { id: 'jarvis', name: 'Жарвис', tag: 'Координатор', tools: ['cal', 'mail', 'drive'],
   role: 'координатор: саволни тушунади, керак бўлса саҳифани бошқаради ва қисқа, аниқ жавоб беради. Савол бирор скилл агентига мос келса (масалан, тонгги брифинг, маркетинг, дарс), шу агент номини ҳам айт',
-  sugg: ['Эртага менда нима бор?', 'ДНКни кўрсат ва ажрат', 'Қайси скиллар бор?'] };
+  sugg: ['Эртага менда нима бор?', 'ДНКни кўрсат ва ажрат', 'Саёҳат', 'Тест'] };
 const SKILLS = [
   { id: 'morning', skill: 'morning', name: 'Тонгги брифинг', rx: /\btong|\bmorning\b/, tag: 'Бугун: календар + почта', tools: ['cal', 'mail'],
     role: 'бугунги кун учун тонгги брифинг: аввал воситалар билан бугунги тадбирларни ва ўқилмаган муҳим хатларни ол, кейин 3–5 жумлада гапир (нечта тадбир, биринчиси қачон, қайси хатлар муҳим). Реклама хатларини санама. Ҳар куни автоматик брифинг учун Claude чатида /morning скиллини эслат',
@@ -1135,7 +1293,7 @@ const SKILLS = [
 ];
 const EXPERTS = [
   { id: 'research', name: 'Тадқиқотчи', rx: /\btadqiqotchi/, tag: 'Манба ва далил', role: 'илмий фактлар, тадқиқотлар ва далилларни тушунтириш; ишончли манба турларини тавсия қилиш', sugg: ['Микропластик сувга қандай таъсир қилади?'] },
-  { id: 'chem', name: 'Кимёгар', rx: /\bkimyogar/, tag: 'Реакция ва формула', tools: ['holo'], role: 'моддалар, кимёвий реакциялар, формулалар, ҳисоблар ва лаборатория хавфсизлиги', sugg: ['Нега сув қутбли молекула?', 'Бензол нега ароматик?'] },
+  { id: 'chem', name: 'Кимёгар', rx: /\bkimyogar/, tag: 'Реакция ва формула', tools: ['holo'], role: 'моддалар, кимёвий реакциялар, формулалар, ҳисоблар ва лаборатория хавфсизлиги', sugg: ['Нега сув қутбли молекула?', 'H2SO4 моляр массаси', 'Бензол нега ароматик?'] },
   { id: 'eco', name: 'Эколог', rx: /\bekolog(\b|ga\b|dan\b|ning\b)/, tag: 'Ҳаво, сув, тупроқ', tools: ['holo'], role: 'атроф-муҳит, ҳаво ва сув сифати, тупроқ, иқлим ва табиатга асосланган ечимлар (NbS)', sugg: ['Табиатга асосланган ечим (NbS) нима?', 'Озон қатлами нима учун керак?'] },
   { id: 'eng', name: 'Муҳандис', rx: /\bmuhandis/, tag: 'Жараён ва ҳисоб', role: 'технологик жараёнлар, ускуналар, муҳандислик ҳисоблари ва лойиҳа ечимлари', sugg: ['Насос қувватини қандай ҳисоблайман?'] },
   { id: 'strat', name: 'Стратег', rx: /\bstrateg/, tag: 'Режа ва қадам', role: 'мақсадни аниқ қадамларга бўлиш, режа тузиш ва устуворликни белгилаш', sugg: ['Илмий мақолани 2 ҳафтада ёзиш режаси'] },
@@ -1228,7 +1386,7 @@ function submitText(v) { handleUtterance(v, 'text'); }
 /* ---------------- voice commands ---------------- */
 const TR = { 'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'ғ': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'j', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'қ': 'q', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'ў': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'x', 'ҳ': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sh', 'ъ': '', 'ы': 'i', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya' };
 function norm(s) {
-  s = s.toLowerCase().replace(/[ʻʼ'`’‘´]/g, '');
+  s = s.toLowerCase().replace(/[ʻʼ'`’‘´]/g, '').replace(/[₀-₉]/g, d => String(d.charCodeAt(0) - 0x2080));
   let out = '', prev = false;
   for (const ch of s) { if (ch === 'е' && !prev) out += 'ye'; else out += TR[ch] ?? ch; prev = /\p{L}/u.test(ch); }
   return out.replace(/[^a-z0-9]+/g, ' ').trim();
@@ -1238,6 +1396,11 @@ const RX = {
   co2: /\bco ?2\b|\bse o\b|\bkarbonat|\bangidrid|\buglekisl|\bcarbon dioxide|\bdioxide/, atom: /\batom|\buglerod|\bcarbon\b/,
   water: /\bsuv|\bvod[aiuyo]\b|\bwater/, benzene: /\bbenzol|\bbenzen/, dna: /\bdnk|\bdna\b|\bdi en ey|\bgenetik|\bspiral/,
   atmosphere: /\batmosfer|\batmospher|\bozon|\byer\b|\byerni|\bzemly|\bearth|\bplanet/,
+  methane: /\bmetan|\bmethan|\bch ?4\b|\btabiiy gaz/, ozone: /\bozon (molekula|gaz)|\bo ?3\b|\bozone molec|\bmolekula ozon/,
+  ammonia: /\bammiak|\bammon|\bnh ?3\b/, nacl: /\bosh tuz|\bnacl\b|\bnatriy xlor|\bkristal|\bsalt\b|\bpanjara|\bsol\b/,
+  quiz: /\btest\b|\btestni|\bsavol ber|\bviktorina|\bquiz|\bsinab kor/, tour: /\bsayohat|\bekskursiya|\btour\b|\bhammasini korsat|\bprezentats/,
+  snap: /\bsurat|\bskrinshot|\bscreenshot|\bsnimok|\bfoto/, mass: /\bmolyar|\bmolar|\bmassa|\bmolekulyar ogirlik|\bmolecular weight/,
+  ans: /^(birinchi(si)?|bir|1|a|pervyy|first|ikkinchi(si)?|ikki|2|b|vtoroy|second|uchinchi(si)?|uch|3|v|tretiy|third)( javob| variant)?$/,
   next: /\bkeyingi|\bsleduyu|\bnext\b|\bdalee/, prev: /\boldingi|\borqaga|\bpredid|\bnazad|\bprevious|\bback\b/,
   explode: /\bajrat|\bportla|\bochil|\bochib|\boch\b|\bkengay|\brazobr|\bvzorv|\braskr|\bexplod|\bopen\b|\bsplit/,
   assemble: /\byig|\bjamla|\bbirlasht|\byop(il|ib)?\b|\bsobr|\bassembl|\bclose\b|\bcombin/,
@@ -1252,21 +1415,27 @@ function handleUtterance(raw, src = 'voice') {
   $('#youSaid').textContent = '«' + text + '»';
   let t = norm(text).replace(/\b(d?jarvis|jarviz|djarvis|jarvic)\b/g, ' ').replace(/\s+/g, ' ').trim();
   if (!t) { say('Эшитаман.'); return; }
+  // quiz answers by voice: «биринчи», «иккинчи», «учинчи»
+  if (quiz.open && !quiz.done && RX.ans.test(t)) { const w = t.split(' ')[0]; answerQuiz(/^(bir|1|a|perv|first)/.test(w) ? 0 : /^(ikki|2|b|vtor|second)/.test(w) ? 1 : 2); return; }
+  // offline molar-mass calculator: «H2SO4 моляр массаси»
+  if (RX.mass.test(t)) { const r = molarFromText(text); if (r) { if (src === 'text' || state.mode === 'agents') addMsg('me', text); say(r.text, { who: 'Кимёгар' }); return; } }
   const acts = [];
   const ag = AGENTS.find(a => a.rx && a.rx.test(t));
   if (RX.particles.test(t)) { setMode('particles'); acts.push('Зарралар шари.'); }
   else if (RX.agents.test(t) && !ag) { setMode('agents'); acts.push('Агентлар панели.'); }
   else if (RX.hologram.test(t)) { setMode('hologram'); acts.push('Голограмма.'); }
   let mid = null;
-  for (const k of ['co2', 'atom', 'water', 'benzene', 'dna', 'atmosphere']) { if (RX[k].test(t)) { mid = k; break; } }
-  if (mid) { showModel(mid); acts.push(DEFS[state.model].name + '.'); }
+  const MAP = { co2: 'co2', methane: 'methane', ozone: 'ozone', ammonia: 'ammonia', nacl: 'nacl', atom: 'atom', water: 'water', benzene: 'benzene', dna: 'dna', atmosphere: 'atmosphere' };
+  for (const k of Object.keys(MAP)) { if (RX[k].test(t)) { mid = MAP[k]; break; } }
+  if (mid) { if (tour.on) stopTour(); showModel(mid); acts.push(DEFS[state.model].name + '.'); }
   else if (RX.next.test(t)) { showModel(state.model + 1); acts.push('Кейинги модел: ' + DEFS[state.model].name + '.'); }
   else if (RX.prev.test(t)) { showModel(state.model - 1); acts.push('Олдинги модел: ' + DEFS[state.model].name + '.'); }
   if (RX.explode.test(t)) { if (state.mode !== 'hologram') setMode('hologram'); setExploded(true); acts.push('Қисмларга ажратдим.'); }
   else if (RX.assemble.test(t)) { if (state.mode !== 'hologram') setMode('hologram'); setExploded(false); acts.push('Йиғдим.'); }
   if (RX.bigger.test(t)) { zoomBy(1.35); acts.push('Катталаштирдим.'); }
   else if (RX.smaller.test(t)) { zoomBy(1 / 1.35); acts.push('Кичрайтирдим.'); }
-  if (RX.stop.test(t)) { state.autoRotate = false; acts.push('Айланиш тўхтади.'); }
+  if (RX.stop.test(t) && tour.on) { stopTour(); acts.push('Саёҳат тўхтади.'); }
+  else if (RX.stop.test(t)) { state.autoRotate = false; acts.push('Айланиш тўхтади.'); }
   else if (RX.rotate.test(t)) { state.autoRotate = true; state.lastTouch = 0; acts.push('Айланяпти.'); }
   if (RX.reset.test(t)) { resetView(); acts.push('Жойига қайтардим.'); }
   if (RX.mirror.test(t)) { toggleMirror(); acts.push(state.mirror ? 'Кўзгу ёқилди.' : 'Кўзгу ўчирилди.'); }
@@ -1274,6 +1443,9 @@ function handleUtterance(raw, src = 'voice') {
   if (RX.labels.test(t)) { toggleLabels(); acts.push(state.labels ? 'Ёзувлар кўрсатилди.' : 'Ёзувлар яширилди.'); }
   if (RX.camera.test(t) && !state.camOn) { camToggle(); acts.push('Камерани ёқяпман.'); }
   if (RX.help.test(t)) { $('#sheet').hidden = false; acts.push('Буйруқлар рўйхати очилди.'); }
+  if (RX.snap.test(t)) { snapshot(); acts.push('Суратга олдим.'); }
+  if (RX.tour.test(t) && !tour.on) { if (src === 'text' || state.mode === 'agents') addMsg('me', text); startTour(); return; }
+  if (RX.quiz.test(t) && !ag) { if (src === 'text' || state.mode === 'agents') addMsg('me', text); openQuiz(); return; }
   if (ag) selectAgent(ag.id);
   const isQ = RX.question.test(t) || (src === 'text' && !acts.length);
   if (src === 'text' || state.mode === 'agents') addMsg('me', text);
@@ -1283,7 +1455,7 @@ function handleUtterance(raw, src = 'voice') {
 }
 
 /* ---------------- Claude (agents) ---------------- */
-const AI = { sample: null, toolsOk: false, maxTools: 8, tts: null, mcp: null, servers: new Set(), history: [], ctl: null, links: [] };
+const AI = { dl: null, sample: null, toolsOk: false, maxTools: 8, tts: null, mcp: null, servers: new Set(), history: [], ctl: null, links: [] };
 try { const h = JSON.parse(localStorage.getItem('jarvis-history') || '[]'); if (Array.isArray(h)) AI.history = h.slice(-16); } catch (e) { }
 function saveHistory() { try { localStorage.setItem('jarvis-history', JSON.stringify(AI.history.slice(-16))); } catch (e) { } }
 const pad2 = n => String(n).padStart(2, '0');
@@ -1293,7 +1465,7 @@ const HOLO_TOOLS = [
   { name: 'set_mode', description: 'Switches the page mode: hologram (3D models), particles (particle sphere), agents (agents panel). Returns the new mode.',
     inputSchema: { type: 'object', properties: { mode: { type: 'string', enum: ['hologram', 'particles', 'agents'] } }, required: ['mode'] },
     execute: ({ mode }) => { setMode(String(mode)); return { mode: state.mode }; } },
-  { name: 'show_model', description: 'Shows a 3D hologram model. id: atom (carbon atom), water (H2O), co2 (carbon dioxide), benzene, dna, atmosphere (Earth atmosphere layers). Returns the model name and its labeled parts.',
+  { name: 'show_model', description: 'Shows a 3D hologram model. id: atom (carbon atom), water (H2O), co2 (carbon dioxide), benzene, dna, atmosphere (Earth atmosphere layers), methane (CH4), ozone (O3 molecule), ammonia (NH3), nacl (table salt ionic crystal). Returns the model name and its labeled parts.',
     inputSchema: { type: 'object', properties: { id: { type: 'string', enum: DEFS.map(d => d.id) } }, required: ['id'] },
     execute: ({ id }) => { const i = DEFS.findIndex(d => d.id === String(id)); if (i < 0) throw new Error('unknown model'); showModel(i); return { shown: DEFS[i].name, parts: current.parts.map(p => p.name) }; } },
   { name: 'explode_model', description: 'Splits the current hologram into its parts (open=true) or assembles it back (open=false).',
@@ -1301,7 +1473,10 @@ const HOLO_TOOLS = [
     execute: ({ open }) => { setExploded(!!open); return { exploded: state.exploded }; } },
   { name: 'zoom', description: 'Scales the hologram by a factor between 0.5 and 2 (above 1 = bigger).',
     inputSchema: { type: 'object', properties: { factor: { type: 'number' } }, required: ['factor'] },
-    execute: ({ factor }) => { zoomBy(clamp(Number(factor) || 1, .5, 2)); return { zoom: +state.zoom.toFixed(2) }; } }
+    execute: ({ factor }) => { zoomBy(clamp(Number(factor) || 1, .5, 2)); return { zoom: +state.zoom.toFixed(2) }; } },
+  { name: 'start_quiz', description: 'Opens a short multiple-choice quiz about the hologram model on screen, so the user can test themselves.',
+    inputSchema: { type: 'object', properties: {} },
+    execute: () => { openQuiz(); return { model: DEFS[state.model].name, question: quiz.q?.q }; } }
 ];
 const MCP_MSG = {
   needs_reauth: s => `${s} уланиши эскирган. claude.ai → Settings → Connectors бўлимида қайта уланг.`,
@@ -1478,7 +1653,8 @@ function setupSR() {
 }
 async function initCapabilities() {
   if (!IN_VIEWER) { setupSR(); renderStatus(); return; }
-  const [d, t, s, mc] = await Promise.all(['dictation', 'tts', 'sample', 'mcp'].map(n => window.claude.use(n).catch(() => null)));
+  const [d, t, s, mc, dl] = await Promise.all(['dictation', 'tts', 'sample', 'mcp', 'downloads'].map(n => window.claude.use(n).catch(() => null)));
+  AI.dl = dl;
   if (mc) { AI.mcp = mc; try { const lt = await mc.listTools(); (lt?.servers || []).forEach(sv => { if (sv.tools && sv.tools.length) AI.servers.add(sv.server); }); } catch (e) { } }
   if (d) {
     Voice.d = d; Voice.kind = 'dictation';
@@ -1493,6 +1669,177 @@ async function initCapabilities() {
   else { setChip($('#ttsBtn'), false); state.ttsOn = false; }
   if (s) { AI.sample = s; try { const lim = await s.limits(); AI.toolsOk = !!lim?.tools; if (lim?.tools?.maxCount) AI.maxTools = lim.tools.maxCount; } catch (e) { AI.toolsOk = false; } }
   renderStatus();
+}
+
+/* ---------------- quiz ---------------- */
+const QUIZ = {
+  atom: [['Углерод атомида нечта протон бор?', ['4', '6', '12'], 1, 'Тартиб рақами Z = 6, демак 6 та протон.'],
+    ['Углероднинг валент электронлари нечта?', ['2', '4', '6'], 1, 'L қобиқдаги 4 электрон: 2s² 2p². Шунинг учун углерод 4 та боғ ҳосил қилади.'],
+    ['¹⁴C изотопида нечта нейтрон бор?', ['6', '7', '8'], 2, 'Масса сони 14, протонлар 6: 14 − 6 = 8 нейтрон.']],
+  water: [['H–O–H бурчаги қанча?', ['90°', '104,5°', '180°'], 1, 'Кислороддаги 2 та бўлинмаган электрон жуфти боғларни бир-бирига сиқади.'],
+    ['Сув нега яхши эритувчи?', ['Молекуласи қутбли', 'Молекуласи чизиқли', 'Таркибида углерод бор'], 0, 'O томони δ−, H томони δ+: ионлар ва қутбли моддалар сувга тортилади.'],
+    ['Сувнинг моляр массаси қанча?', ['16 г/моль', '18 г/моль', '20 г/моль'], 1, '2 × 1 + 16 = 18 г/моль.']],
+  co2: [['CO₂ молекуласининг шакли қандай?', ['Бурчакли', 'Чизиқли', 'Пирамида'], 1, 'Бурчак 180°, шунинг учун диполлар бир-бирини йўқотади.'],
+    ['CO₂ иссиқхона эффектини нега кучайтиради?', ['Инфрақизил нурни ютади', 'Ультрабинафша нурни ютади', 'Кислород чиқаради'], 0, 'Ердан қайтаётган иссиқлик (инфрақизил) нурини ютиб, қайта тарқатади.'],
+    ['Углерод ва кислород орасида қандай боғ бор?', ['Оддий', 'Қўш', 'Учламчи'], 1, 'Ҳар бир C=O — қўш боғ: битта σ ва битта π.']],
+  benzene: [['Бензолда нечта π-электрон бор?', ['2', '6', '12'], 1, 'Учта қўш боғнинг 6 та π-электрони бутун ҳалқа бўйлаб тарқалган.'],
+    ['Бензолдаги C–C боғлар узунлиги қандай?', ['Ҳаммаси тенг', 'Навбатма-навбат қисқа ва узун', 'Тасодифий'], 0, 'Ҳаммаси 1,39 Å: оддий ва қўш боғ ўртасида.'],
+    ['Бензолдаги углерод қандай гибридланган?', ['sp', 'sp²', 'sp³'], 1, 'sp²: учта σ-боғ 120° бурчак остида, текис ҳалқа.']],
+  dna: [['Аденин (A) қайси асос билан жуфт ҳосил қилади?', ['G', 'C', 'T'], 2, 'A ↔ T (2 водород боғи), G ↔ C (3 водород боғи).'],
+    ['G–C жуфтида нечта водород боғи бор?', ['2', '3', '4'], 1, 'Шунинг учун G–C кўп бўлган жойлар мустаҳкамроқ.'],
+    ['Репликацияда занжирлар нега осон ажралади?', ['Водород боғлари кучсиз', 'Ковалент боғлар узилади', 'Фосфат йўқолади'], 0, 'Асослар орасидаги водород боғлари кучсиз, занжир ичидаги боғлар эса мустаҳкам.']],
+  atmosphere: [['Об-ҳаво қайси қатламда бўлади?', ['Тропосфера', 'Стратосфера', 'Термосфера'], 0, 'Тропосферада ҳаво массасининг ≈75% и ва деярли ҳамма сув буғи бор.'],
+    ['Озон қатлами нимани ютади?', ['Инфрақизил нур', 'Ультрабинафша нур', 'Радио тўлқин'], 1, 'O₃ хавфли ультрабинафша нурни ютиб, ҳаётни ҳимоя қилади.'],
+    ['Энг совуқ қатлам қайси?', ['Тропосфера', 'Мезосфера', 'Термосфера'], 1, 'Мезосферанинг юқори қисмида ҳарорат −90 °C гача тушади.']],
+  methane: [['Метандаги H–C–H бурчаги қанча?', ['90°', '109,5°', '120°'], 1, 'Тўрт боғ бир-биридан энг узоқда: тетраэдр, 109,5°.'],
+    ['Метан иссиқхона гази сифатида CO₂ га нисбатан қандай?', ['Кучсизроқ', '100 йилда ≈ 28 марта кучлироқ', 'Бир хил'], 1, 'Метан кам, лекин иссиқликни анча кучли ушлайди.'],
+    ['Метаннинг катта манбаларидан бири қайси?', ['Шолипоя ва чорвачилик', 'Шамол', 'Қум'], 0, 'Кислородсиз чириш (шолипоя, мол ошқозони, чиқинди уюмлари) метан чиқаради.']],
+  ozone: [['Озон молекуласида нечта атом бор?', ['2', '3', '4'], 1, 'O₃ — учта кислород атоми.'],
+    ['Ер юзасидаги озон қандай?', ['Фойдали', 'Ифлослантирувчи, нафасга зарар', 'Безарар'], 1, 'Пастки озон смог таркибида, ўпкани таъсирлайди. Юқоридаги озон эса ҳимоя қилади.'],
+    ['Икки O–O боғ нега тенг узунликда?', ['Резонанс', 'Ион боғи', 'Водород боғи'], 0, 'Қўш боғ икки томон орасида «тақсимланган»: ҳар бири бир ярим боғ.']],
+  ammonia: [['NH₃ молекуласининг шакли қандай?', ['Текис учбурчак', 'Учбурчакли пирамида', 'Чизиқли'], 1, 'Тепадаги бўлинмаган электрон жуфти водородларни пастга итаради.'],
+    ['Азотда нечта бўлинмаган электрон жуфти бор?', ['0', '1', '2'], 1, 'Битта жуфт — шу туфайли аммиак асос хоссасига эга.'],
+    ['Аммиак асосан нима учун ишлатилади?', ['Ўғит ишлаб чиқариш', 'Ёқилғи', 'Ош тузи олиш'], 0, 'Дунёдаги аммиакнинг катта қисми азотли ўғитларга кетади.']],
+  nacl: [['NaCl кристалида ҳар бир ион нечта қўшни ион билан ўралган?', ['4', '6', '8'], 1, 'Ҳар бир Na⁺ атрофида 6 та Cl⁻, ва аксинча.'],
+    ['Na ва Cl орасидаги боғ тури қандай?', ['Ковалент', 'Ион', 'Металл'], 1, 'Na электронини Cl га беради, қарама-қарши ионлар тортишади.'],
+    ['Ош тузининг суюқланиш ҳарорати қанча?', ['≈ 100 °C', '≈ 801 °C', '≈ 1500 °C'], 1, 'Ион боғлари кучли, шунинг учун 801 °C керак.']]
+};
+let quizScore = (prefs.score && typeof prefs.score.ok === 'number') ? prefs.score : { ok: 0, all: 0 };
+const quiz = { open: false, q: null, done: false, idx: {} };
+function renderScore() {
+  const pct = quizScore.all ? Math.round(quizScore.ok / quizScore.all * 100) : 0;
+  $('#scoreLine').innerHTML = quizScore.all ? `<span>Тест натижаси</span><span><b>${quizScore.ok}</b> / ${quizScore.all} · ${pct}%</span>` : '<span>Тест: «Тест» тугмасини босинг</span>';
+  $('#qScore').textContent = quizScore.all ? `${quizScore.ok} / ${quizScore.all}` : '';
+}
+function openQuiz() {
+  if (tour.on) stopTour();
+  if (state.mode !== 'hologram') setMode('hologram');
+  const d = DEFS[state.model], bank = QUIZ[d.id] || [];
+  if (!bank.length) return;
+  const i = quiz.idx[d.id] = ((quiz.idx[d.id] ?? -1) + 1) % bank.length;
+  const [q, opts, ans, why] = bank[i];
+  quiz.q = { q, opts, ans, why }; quiz.open = true; quiz.done = false;
+  $('#sheet').hidden = true; $('#quiz').hidden = false;
+  $('#qModel').textContent = `Тест · ${d.name} · ${i + 1}/${bank.length}`;
+  $('#qText').textContent = q; $('#qFb').textContent = ''; $('#qFb').className = 'fb';
+  const box = $('#qOpts'); box.textContent = '';
+  opts.forEach((o, k) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = '<span></span><b></b>';
+    b.querySelector('span').textContent = ['1', '2', '3'][k]; b.querySelector('b').textContent = o; b.querySelector('b').style.fontWeight = '500';
+    b.addEventListener('click', () => answerQuiz(k)); box.appendChild(b); });
+  $('#qNext').hidden = true;
+  renderScore(); sfx.chirp(true);
+  say(q + ' ' + opts.map((o, k) => ['Биринчи', 'Иккинчи', 'Учинчи'][k] + ': ' + o + '.').join(' '), { log: false });
+}
+function answerQuiz(k) {
+  if (!quiz.open || quiz.done || !quiz.q) return;
+  quiz.done = true; const ok = k === quiz.q.ans;
+  quizScore.all++; if (ok) quizScore.ok++; savePrefs();
+  [...$('#qOpts').children].forEach((b, i) => { b.disabled = true; if (i === quiz.q.ans) b.classList.add('ok'); else if (i === k) b.classList.add('bad'); });
+  const fb = $('#qFb'); fb.className = 'fb ' + (ok ? 'ok' : 'bad');
+  fb.textContent = (ok ? 'Тўғри! ' : 'Нотўғри. Тўғри жавоб: ' + quiz.q.opts[quiz.q.ans] + '. ') + quiz.q.why;
+  $('#qNext').hidden = false; renderScore();
+  ok ? sfx.chirp(true) : sfx.chirp(false);
+  say(fb.textContent, { log: false });
+}
+function closeQuiz() { if (!quiz.open) return; quiz.open = false; $('#quiz').hidden = true; }
+$('#quizBtn').addEventListener('click', () => openQuiz());
+$('#qNext').addEventListener('click', () => openQuiz());
+$('#qClose').addEventListener('click', () => closeQuiz());
+
+/* ---------------- guided tour ---------------- */
+const tour = { on: false, timers: [], i: 0 };
+function tourStep() {
+  if (!tour.on) return;
+  if (tour.i >= DEFS.length) { stopTour(); say('Саёҳат тугади. Савол бўлса, микрофонни босинг ёки «тест» деб айтинг.'); return; }
+  const i = tour.i++; showModel(i); state.autoRotate = true; state.lastTouch = 0;
+  const d = DEFS[i]; say(`${d.name}. ${d.blurb}`);
+  const ms = clamp(d.blurb.length * 75, 7000, 13000);
+  tour.timers.push(setTimeout(() => tour.on && setExploded(true), ms * .45));
+  tour.timers.push(setTimeout(() => tour.on && setExploded(false), ms * .85));
+  tour.timers.push(setTimeout(tourStep, ms));
+}
+function startTour() {
+  closeQuiz(); if (state.mode !== 'hologram') setMode('hologram');
+  tour.on = true; tour.i = 0; $('#tourBtn').classList.add('on'); $('#tourBtn').setAttribute('aria-pressed', 'true'); $('#tourBtn').textContent = 'Тўхтатиш';
+  sfx.chirp(true); tourStep();
+}
+function stopTour() {
+  tour.on = false; tour.timers.forEach(clearTimeout); tour.timers = [];
+  $('#tourBtn').classList.remove('on'); $('#tourBtn').setAttribute('aria-pressed', 'false'); $('#tourBtn').textContent = 'Саёҳат';
+}
+function toggleTour() { tour.on ? stopTour() : startTour(); }
+$('#tourBtn').addEventListener('click', () => toggleTour());
+
+/* ---------------- molar mass calculator (offline) ---------------- */
+const AMASS = { H: 1.008, He: 4.003, Li: 6.94, Be: 9.012, B: 10.81, C: 12.011, N: 14.007, O: 15.999, F: 18.998, Ne: 20.18, Na: 22.99, Mg: 24.305, Al: 26.982, Si: 28.085, P: 30.974, S: 32.06, Cl: 35.45, Ar: 39.95, K: 39.098, Ca: 40.078,
+  Ti: 47.867, Cr: 51.996, Mn: 54.938, Fe: 55.845, Co: 58.933, Ni: 58.693, Cu: 63.546, Zn: 65.38, As: 74.922, Se: 78.971, Br: 79.904, Sr: 87.62, Ag: 107.87, Sn: 118.71, I: 126.9, Ba: 137.33, Pt: 195.08, Au: 196.97, Hg: 200.59, Pb: 207.2, U: 238.03 };
+function parseFormula(f) {
+  f = f.replace(/[₀-₉]/g, d => String(d.charCodeAt(0) - 0x2080)).replace(/[\[{]/g, '(').replace(/[\]}]/g, ')');
+  const parts = f.split(/[·*•.]/); const total = {};
+  for (let part of parts) {
+    let mult = 1; const mm = part.match(/^(\d+)(.*)$/); if (mm) { mult = +mm[1]; part = mm[2]; }
+    const stack = [{}]; let i = 0;
+    while (i < part.length) {
+      const ch = part[i];
+      if (ch === '(') { stack.push({}); i++; }
+      else if (ch === ')') { i++; let n = ''; while (/\d/.test(part[i] || '')) n += part[i++]; const g = stack.pop(); if (!stack.length) return null; const top = stack[stack.length - 1]; for (const k in g) top[k] = (top[k] || 0) + g[k] * (+n || 1); }
+      else if (/[A-Z]/.test(ch)) { let el = ch; i++; if (/[a-z]/.test(part[i] || '')) el += part[i++]; if (!(el in AMASS)) return null; let n = ''; while (/\d/.test(part[i] || '')) n += part[i++]; const top = stack[stack.length - 1]; top[el] = (top[el] || 0) + (+n || 1); }
+      else return null;
+    }
+    if (stack.length !== 1) return null;
+    for (const k in stack[0]) total[k] = (total[k] || 0) + stack[0][k] * mult;
+  }
+  return Object.keys(total).length ? total : null;
+}
+const SUB = n => String(n).replace(/\d/g, d => '₀₁₂₃₄₅₆₇₈₉'[d]);
+const fmtN = (x, d = 2) => x.toFixed(d).replace('.', ',');
+function molarFromText(text) {
+  const toks = (text.match(/[A-Z(\[][A-Za-z0-9()\[\]₀-₉·*•]*/g) || []).filter(x => /[A-Z]/.test(x));
+  for (const tk of toks) {
+    const f = tk.replace(/[.*•]+$/, ''); const comp = parseFormula(f); if (!comp) continue;
+    let M = 0; const rows = [];
+    for (const [el, n] of Object.entries(comp)) { const m = AMASS[el] * n; M += m; rows.push({ el, n, m }); }
+    const pretty = f.replace(/\d+/g, (d, off) => (off > 0 && /[A-Za-z)\]]/.test(f[off - 1])) ? SUB(d) : d).replace(/[*•.]/g, '·');
+    const det = rows.map(r => `${r.el} ${r.n > 1 ? r.n + ' × ' + fmtN(AMASS[r.el], 3) + ' = ' : ''}${fmtN(r.m)} (${fmtN(r.m / M * 100, 1)}%)`).join('; ');
+    return { M, text: `${pretty} моляр массаси ${fmtN(M)} г/моль. Таркиби: ${det}.` };
+  }
+  return null;
+}
+
+/* ---------------- snapshot ---------------- */
+function snapshot() { state.snap = true; }
+function saveSnapshot() {
+  try {
+    const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR; const g = c.getContext('2d');
+    const bg = g.createRadialGradient(c.width / 2, c.height * .45, 0, c.width / 2, c.height * .45, Math.max(c.width, c.height) * .7);
+    bg.addColorStop(0, '#0a2234'); bg.addColorStop(.55, '#04101b'); bg.addColorStop(1, '#02070d'); g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height);
+    if (state.camOn && video.videoWidth) {
+      const vw = video.videoWidth, vh = video.videoHeight, s = Math.max(c.width / vw, c.height / vh);
+      g.save(); if (state.mirror) { g.translate(c.width, 0); g.scale(-1, 1); } if (state.bw) g.filter = 'grayscale(1) contrast(1.1)';
+      g.drawImage(video, (c.width - vw * s) / 2, (c.height - vh * s) / 2, vw * s, vh * s); g.restore();
+      g.fillStyle = `rgba(0,0,0,${state.dim})`; g.fillRect(0, 0, c.width, c.height);
+    }
+    g.drawImage(glCanvas, 0, 0, c.width, c.height); g.drawImage(fx, 0, 0, c.width, c.height);
+    const d = DEFS[state.model], now = new Date();
+    g.fillStyle = 'rgba(223,247,255,.9)'; g.font = `${14 * DPR}px "Jura", sans-serif`;
+    g.fillText(`ЖАРВИС ГОЛО ЛАБ · ${state.mode === 'hologram' ? d.name + ' (' + d.formula + ')' : 'Зарралар'} · ${localISO(now).replace('T', ' ')}`, 18 * DPR, c.height - 18 * DPR);
+    c.toBlob(b => {
+      if (!b) { toast('Суратни сақлаб бўлмади.'); return; }
+      const filename = `jarvis-${state.mode === 'hologram' ? d.id : state.mode}-${localISO(now).slice(0, 16).replace(/[T:]/g, '-')}.png`;
+      airFlash.push({ x: W / 2, y: H / 2, t: performance.now() }); sfx.chirp(true);
+      if (AI.dl) {
+        AI.dl.save({ filename, data: b }).then(() => toast('Сурат сақланди.', 3000)).catch(e => {
+          if (e?.code === 'declined') return;
+          if (e?.code === 'rate_limited') toast('Бироздан кейин қайта уриниб кўринг.'); else toast('Бу ерда суратни сақлаб бўлмайди. Саҳифани браузерда очинг.');
+        });
+        return;
+      }
+      if (IN_VIEWER) { toast('Бу ерда суратни сақлаб бўлмайди. Саҳифани браузерда очинг.'); return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Сурат юклаб олинди.', 3000);
+    }, 'image/png');
+  } catch (e) { toast('Суратни сақлаб бўлмади (камера тасвири ҳимояланган бўлиши мумкин).'); }
 }
 
 /* ---------------- render loop ---------------- */
@@ -1523,7 +1870,7 @@ function frame(now) {
     current.decos.forEach(([m, op, f]) => { const o = op * (f ? 1 - te : 1) * U.fade.value; if (m.uniforms) m.uniforms.uOpacity.value = o; else m.opacity = o; });
     current.tick && current.tick(t);
     root.updateMatrixWorld(true);
-    const hp = pickAt(hoverSrc.x, hoverSrc.y);
+    const hp = pickAt(hoverSrc.x, hoverSrc.y) || state.pinned;
     if (hp !== state.hover) { state.hover = hp; if (hp) sfx.tick(); }
     current.parts.forEach(p => { p.hi = lerp(p.hi, p === state.hover ? 1 : 0, 1 - Math.pow(.001, dt)); p.mats.forEach(m => m.uniforms.uHi.value = p.hi); });
   }
@@ -1537,6 +1884,7 @@ function frame(now) {
   }
   renderer.render(scene, camera);
   drawFx(now, t);
+  if (state.snap) { state.snap = false; saveSnapshot(); }
   if (now - statusT > 500) { statusT = now; renderStatus(); }
   requestAnimationFrame(frame);
 }
@@ -1591,13 +1939,19 @@ function drawFx(now, t) {
 }
 
 /* ---------------- boot ---------------- */
-mountModel(0); renderNodes(); selectAgent('jarvis'); resize(); setMode('hologram');
+if (typeof prefs.labels === 'boolean') toggleLabels(prefs.labels);
+if (typeof prefs.mirror === 'boolean') toggleMirror(prefs.mirror);
+if (typeof prefs.bw === 'boolean') toggleBW(prefs.bw);
+if (typeof prefs.tts === 'boolean') { state.ttsOn = prefs.tts; setChip($('#ttsBtn'), prefs.tts); }
+if (typeof prefs.dim === 'number') setDim(clamp(prefs.dim, 0, 85));
+mountModel(Math.max(0, DEFS.findIndex(d => d.id === prefs.model))); renderNodes(); selectAgent('jarvis'); resize(); setMode('hologram'); renderScore();
 addMsg('Жарвис', 'Салом! Агентни танланг ёки тўғридан-тўғри савол беринг. «Атомни кўрсат ва ажрат» каби буйруқлар ҳам ишлайди.');
 renderHelp(); renderStatus();
 requestAnimationFrame(frame);
 setTimeout(() => { if ($('#jarvisSaid').textContent === 'Тизим текширилмоқда…') $('#jarvisSaid').textContent = 'Тизим тайёр. Микрофонни босинг ёки моделни танланг.'; }, 900);
 initCapabilities();
-window.jarvis = { state, setMode, showModel, setExploded, say: t => handleUtterance(t, 'text'), hands: () => tracked.map(h => ({ pinch: h.pinch, fist: h.fist, open: h.open, point: h.point, openness: +h.openness.toFixed(2) })),
+window.jarvis = { state, setMode, showModel, setExploded, say: t => handleUtterance(t, 'text'), openQuiz, answerQuiz, startTour, stopTour, molar: t => molarFromText(t), snapshot, hands: () => tracked.map(h => ({ pinch: h.pinch, fist: h.fist, open: h.open, point: h.point, openness: +h.openness.toFixed(2) })),
   partAt: i => current && current.parts[i] ? partScreen(current.parts[i]) : null, feed: r => onHands(r) };
 </script>
+
 </body></html>
