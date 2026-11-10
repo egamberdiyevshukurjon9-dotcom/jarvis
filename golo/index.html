@@ -1455,7 +1455,7 @@ function handleUtterance(raw, src = 'voice') {
 }
 
 /* ---------------- Claude (agents) ---------------- */
-const AI = { sample: null, toolsOk: false, maxTools: 8, tts: null, mcp: null, servers: new Set(), history: [], ctl: null, links: [] };
+const AI = { dl: null, sample: null, toolsOk: false, maxTools: 8, tts: null, mcp: null, servers: new Set(), history: [], ctl: null, links: [] };
 try { const h = JSON.parse(localStorage.getItem('jarvis-history') || '[]'); if (Array.isArray(h)) AI.history = h.slice(-16); } catch (e) { }
 function saveHistory() { try { localStorage.setItem('jarvis-history', JSON.stringify(AI.history.slice(-16))); } catch (e) { } }
 const pad2 = n => String(n).padStart(2, '0');
@@ -1653,7 +1653,8 @@ function setupSR() {
 }
 async function initCapabilities() {
   if (!IN_VIEWER) { setupSR(); renderStatus(); return; }
-  const [d, t, s, mc] = await Promise.all(['dictation', 'tts', 'sample', 'mcp'].map(n => window.claude.use(n).catch(() => null)));
+  const [d, t, s, mc, dl] = await Promise.all(['dictation', 'tts', 'sample', 'mcp', 'downloads'].map(n => window.claude.use(n).catch(() => null)));
+  AI.dl = dl;
   if (mc) { AI.mcp = mc; try { const lt = await mc.listTools(); (lt?.servers || []).forEach(sv => { if (sv.tools && sv.tools.length) AI.servers.add(sv.server); }); } catch (e) { } }
   if (d) {
     Voice.d = d; Voice.kind = 'dictation';
@@ -1824,10 +1825,19 @@ function saveSnapshot() {
     g.fillText(`ЖАРВИС ГОЛО ЛАБ · ${state.mode === 'hologram' ? d.name + ' (' + d.formula + ')' : 'Зарралар'} · ${localISO(now).replace('T', ' ')}`, 18 * DPR, c.height - 18 * DPR);
     c.toBlob(b => {
       if (!b) { toast('Суратни сақлаб бўлмади.'); return; }
-      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `jarvis-${state.mode === 'hologram' ? d.id : state.mode}-${localISO(now).slice(0, 16).replace(/[T:]/g, '-')}.png`;
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      const filename = `jarvis-${state.mode === 'hologram' ? d.id : state.mode}-${localISO(now).slice(0, 16).replace(/[T:]/g, '-')}.png`;
       airFlash.push({ x: W / 2, y: H / 2, t: performance.now() }); sfx.chirp(true);
-      toast(IN_VIEWER ? 'Сурат тайёр. Юклаб олиш бу ойнада ёпиқ бўлса, саҳифани браузерда очинг.' : 'Сурат юклаб олинди.', 3500);
+      if (AI.dl) {
+        AI.dl.save({ filename, data: b }).then(() => toast('Сурат сақланди.', 3000)).catch(e => {
+          if (e?.code === 'declined') return;
+          if (e?.code === 'rate_limited') toast('Бироздан кейин қайта уриниб кўринг.'); else toast('Бу ерда суратни сақлаб бўлмайди. Саҳифани браузерда очинг.');
+        });
+        return;
+      }
+      if (IN_VIEWER) { toast('Бу ерда суратни сақлаб бўлмайди. Саҳифани браузерда очинг.'); return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Сурат юклаб олинди.', 3000);
     }, 'image/png');
   } catch (e) { toast('Суратни сақлаб бўлмади (камера тасвири ҳимояланган бўлиши мумкин).'); }
 }
