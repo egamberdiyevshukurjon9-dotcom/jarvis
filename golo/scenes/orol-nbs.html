@@ -1,0 +1,758 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Орол NbS кластери</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D landscape with instrument panels at the edges; on phones the stage sits on top and the panels stack below */
+:root{
+  --bg:#e7eae4; --panel:rgba(248,249,246,.93); --panel-solid:#f8f9f6;
+  --ink:#1d2b27; --muted:#55645f; --faint:#8a9690; --line:#cbd3cd;
+  --accent:#3b8562; --accent-ink:#ffffff; --accent-soft:#d6ebdf;
+  --water:#2f7ea1; --dust:#a8957a; --bad:#b4472f; --ok:#2f7a4c; --ok-soft:#dbeee1; --deck:#2c3a36; --wait:#e3e7e2;
+  --sans:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{position:relative;height:100%}
+#stage{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+#gl{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels,#leader{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}
+#leader line{stroke:var(--accent);stroke-width:1.25;stroke-dasharray:3 3}
+#leader circle{fill:var(--accent);stroke:#fff;stroke-width:2}
+.chip{position:absolute;left:0;top:0;white-space:nowrap;font:500 12px/1 var(--sans);color:var(--ink);background:rgba(248,249,246,.92);border:1px solid var(--line);border-radius:6px;padding:4px 7px;will-change:transform}
+.chip b{font:500 11px/1 var(--mono);color:var(--muted);margin-left:5px;font-variant-numeric:tabular-nums}
+.chip.z{border-color:var(--accent);color:var(--accent);font-weight:600}
+#nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+#ui{position:absolute;inset:0;pointer-events:none;display:grid;grid-template-columns:minmax(240px,272px) minmax(0,1fr) minmax(270px,306px);grid-template-rows:auto minmax(0,1fr) auto;gap:12px;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#ui>*{pointer-events:auto;min-width:0}
+#head{grid-column:1/3;grid-row:1;pointer-events:none;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+#head .tour{pointer-events:auto}
+#head .eyebrow,#head h1,#head .sub{text-shadow:0 0 6px var(--bg),0 0 12px var(--bg),0 0 2px var(--bg)}
+.eyebrow{font:500 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font:700 30px/1.1 var(--sans);letter-spacing:-.015em;text-wrap:balance}
+h1 span{color:var(--accent);font-weight:600}
+.sub{margin:0;color:var(--muted);font-size:14px}
+.tour{display:flex;align-items:center;gap:8px;margin-top:8px;font:500 12px/1 var(--sans);color:var(--muted)}
+.tour .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tour.live .dot{background:var(--faint);box-shadow:0 0 0 3px #e3e7e2}
+.btn{font:500 12.5px/1 var(--sans);color:var(--ink);background:var(--panel-solid);border:1px solid var(--line);border-radius:7px;padding:7px 10px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#left{grid-column:1;grid-row:2;align-self:start;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:11px}
+#right{grid-column:3;grid-row:1/3;align-self:start;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:6px}
+#card{grid-column:2;grid-row:2;align-self:end;justify-self:center;width:100%;max-width:480px}
+#dock{grid-column:1/4;grid-row:3;display:flex;justify-content:center;min-width:0}
+.ph{margin:0;font:600 12px/1.3 var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--ink);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ph .u{font:400 11px/1 var(--mono);text-transform:none;letter-spacing:0;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.frow{display:flex;align-items:baseline;gap:6px}
+.frow label,.flabel{font-size:13px;color:var(--muted);flex:1}
+.frow output{font:500 20px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.u{font:400 11.5px/1 var(--mono);color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.ticks{display:flex;justify-content:space-between;font:400 10.5px/1 var(--mono);color:var(--faint)}
+.sw{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.sw input{width:16px;height:16px;accent-color:var(--accent);margin:0}
+.seg{display:flex;gap:4px}
+.seg button{flex:1;font:500 12.5px/1 var(--mono);padding:7px 0;border:1px solid var(--line);background:var(--panel-solid);border-radius:7px;cursor:pointer;color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.ro{display:grid;grid-template-columns:1fr auto;gap:5px 10px;margin:0;padding-top:10px;border-top:1px solid var(--line)}
+.ro dt{color:var(--muted);font-size:12.5px}
+.ro dd{margin:0;text-align:right;font:400 11.5px/1.3 var(--mono);color:var(--muted);white-space:nowrap}
+.ro dd b{font:500 13.5px/1.3 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.ro .sep{grid-column:1/3;font:600 10.5px/1 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-top:4px}
+.press{transform:scale(.94)}
+
+svg.chart{width:100%;height:auto;display:block;font-family:var(--mono)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--faint);font-size:9.5px}
+.chart .xl{fill:var(--muted);font-size:9.5px;font-family:var(--sans)}
+.chart .val{fill:var(--ink);font-size:10.5px;font-weight:500}
+.chart .ref{stroke:var(--deck);stroke-width:1.2;stroke-dasharray:4 3}
+.chart .refl{fill:var(--deck);font-size:9.5px}
+.chart .done{fill:none;stroke:var(--accent);stroke-width:3}
+.chart .ghost{fill:none;stroke:var(--accent);stroke-width:1.3;opacity:.3}
+.chart .rev{fill:none;stroke:#c08a2a;stroke-width:2.4}
+.chart .revg{fill:none;stroke:#c08a2a;stroke-width:1.2;opacity:.3}
+.chart .mk{fill:var(--panel-solid);stroke:var(--ink);stroke-width:2}
+.chain{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:4px}
+.chain li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px}
+.chain .st{width:14px;height:14px;border-radius:50%;background:var(--wait);border:2px solid var(--line)}
+.chain li.on .st{background:var(--accent);border-color:var(--accent)}
+.chain li.run .st{background:var(--panel-solid);border-color:var(--accent);animation:pulse 1.4s infinite}
+.chain b{font-weight:600}
+.chain small{display:block;color:var(--muted);font-size:11px;line-height:1.3}
+.chain i{font:500 11px var(--mono);font-style:normal;color:var(--muted);white-space:nowrap}
+@keyframes pulse{50%{box-shadow:0 0 0 4px var(--accent-soft)}}
+.pipe{display:grid;grid-template-columns:1fr 14px 1fr 14px 1fr;gap:4px;align-items:stretch;margin-top:2px}
+.pipe div{background:var(--panel-solid);border:1px solid var(--line);border-radius:8px;padding:6px;font-size:11px;line-height:1.3;color:var(--muted)}
+.pipe div b{display:block;color:var(--ink);font-size:12px;font-weight:600}
+.pipe span{align-self:center;text-align:center;color:var(--faint)}
+.linkbtn{margin-top:8px;align-self:flex-start}
+
+.ck{font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+#card h3{margin:3px 0 4px;font:600 17px/1.25 var(--sans);text-wrap:balance}
+#card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+#card .src{margin-top:6px;font:400 11px/1.3 var(--mono);color:var(--faint)}
+.cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px 14px;margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+.cv div{min-width:0}
+.cv dt{font-size:11.5px;color:var(--muted)}
+.cv dd{margin:1px 0 0;font:500 15px/1.2 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cv dd small{font:400 11px var(--mono);color:var(--muted);margin-left:3px}
+.cv dd.ok{color:var(--ok)}
+
+.dockbar{display:flex;gap:2px;padding:5px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto;max-width:100%;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);scrollbar-width:thin}
+.fbtn{flex:none;font:500 13px/1 var(--sans);padding:9px 10px;border-radius:8px;border:0;background:transparent;color:var(--ink);cursor:pointer;transition:background .2s,color .2s}
+.fbtn:hover{background:var(--accent-soft)}
+.fbtn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.fbtn .k{font:400 10px/1 var(--mono);opacity:.55;margin-right:5px}
+
+#cursor{position:fixed;left:0;top:0;width:26px;height:26px;pointer-events:none;z-index:60;opacity:0;transition:opacity .3s;will-change:transform}
+#cursor svg{width:26px;height:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+#cursor .rip{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;border:2px solid var(--accent);opacity:0}
+
+#about{position:fixed;z-index:70;left:50%;top:50%;transform:translate(-50%,-50%);width:min(820px,calc(100vw - 32px));max-height:min(86vh,880px);overflow:auto;background:var(--panel-solid);box-shadow:0 18px 50px rgba(29,43,39,.22)}
+#about .ahead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+#about h2{margin:0;font:600 20px/1.2 var(--sans)}
+#about h3{margin:14px 0 6px;font:600 14px/1.3 var(--sans)}
+#about ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px}
+#about p{color:var(--muted);font-size:13px;margin:6px 0;max-width:72ch}
+#about a{color:var(--accent)}
+#about table{border-collapse:collapse;font-size:12.5px;width:100%}
+#about td,#about th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+#about th{font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+.tw{overflow-x:auto}
+#scrim{position:fixed;inset:0;z-index:65;background:rgba(29,43,39,.28)}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  #app{height:auto;display:flex;flex-direction:column}
+  #stage{position:relative;order:1;height:58vh;min-height:320px}
+  #ui{display:contents}
+  #ui>*{margin-left:max(16px,env(safe-area-inset-left,0px));margin-right:max(16px,env(safe-area-inset-right,0px))}
+  #head{order:0;pointer-events:auto;padding-block:14px 10px}
+  h1{font-size:25px}
+  #dock{order:2;margin-top:10px;justify-content:flex-start}
+  #card{order:3;margin-top:10px;max-width:none;width:auto;align-self:stretch}
+  #left{order:4;margin-top:10px;max-height:none}
+  #right{order:5;margin-top:10px;margin-bottom:24px;max-height:none}
+  #leader,#cursor{display:none}
+  .chip{font-size:11px;padding:3px 6px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="app">
+  <div id="stage">
+    <canvas id="gl" tabindex="0" aria-label="Орол NbS кластерининг 3D модели. Сичқонча билан айлантиринг, ғилдирак билан яқинлаштиринг."></canvas>
+    <svg id="leader" aria-hidden="true"><line id="leadLine" x1="0" y1="0" x2="0" y2="0"/><circle id="leadDot" r="4.5" cx="-20" cy="-20"/></svg>
+    <div id="labels" aria-hidden="true"></div>
+    <div id="nogl" hidden>Бу қурилмада WebGL ишламаяпти, шунинг учун 3D модель кўринмайди.</div>
+  </div>
+
+  <div id="ui">
+    <header id="head">
+      <div class="eyebrow">Бирлашган лойиҳа · Мўйноқ, Қорақалпоғистон · 10 та манба</div>
+      <h1>Орол NbS кластери <span>· Яшил белбоғ асосида</span></h1>
+      <p class="sub">Белбоғ, йўл ҳимояси, сув тозалаш, углерод ва кўникмалар — битта тизимда</p>
+      <div class="tour" id="tourBox"><span class="dot"></span><span id="tourTxt">Авто тур</span><button type="button" class="btn" id="tourBtn">Тўхтатиш</button></div>
+    </header>
+
+    <section id="left" class="panel" aria-label="Бошқарув">
+      <h2 class="ph"><span>Вақт</span><span class="u">лойиҳа бошидан</span></h2>
+      <div class="field">
+        <div class="frow"><label for="yr">Йил</label><output id="yOut" for="yr">0,0</output><span class="u">йил</span></div>
+        <input type="range" id="yr" min="0" max="10" step="0.05" value="10">
+        <div class="ticks"><span>0</span><span>3 экиш тугайди</span><span>10</span></div>
+      </div>
+      <label class="sw"><input type="checkbox" id="hydro" checked><span>Гидроел ишлатилади</span></label>
+      <div class="field">
+        <div class="flabel" id="prL">Углерод кредити нархи (фараз)</div>
+        <div class="seg" role="group" aria-labelledby="prL"><button type="button" id="p5" aria-pressed="false">5 $/т</button><button type="button" id="p10" aria-pressed="true">10 $/т</button><button type="button" id="p20" aria-pressed="false">20 $/т</button></div>
+      </div>
+      <dl class="ro">
+        <div class="sep">Белбоғ</div>
+        <dt>Экилган майдон</dt><dd><b id="r-ha">—</b> га</dd>
+        <dt>Кўкариш</dt><dd><b id="r-sv">—</b> %</dd>
+        <dt>Яшил қоплама самараси</dt><dd><b id="r-e">—</b> %</dd>
+        <div class="sep">Углерод</div>
+        <dt>Ютилиш</dt><dd><b id="r-cy">—</b> т CO₂/йил</dd>
+        <dt>Жами ютилган</dt><dd><b id="r-cc">—</b> минг т</dd>
+        <dt>Чиқарилган кредит</dt><dd><b id="r-cr">—</b> минг т</dd>
+        <dt>Кредит тушуми</dt><dd><b id="r-rv">—</b> млн $</dd>
+        <div class="sep">Сув ва одамлар</div>
+        <dt>Реактив мат</dt><dd><b id="r-mt">—</b> % тозалайди</dd>
+        <dt>Иш ўринлари</dt><dd><b id="r-jb">—</b></dd>
+      </dl>
+    </section>
+
+    <section id="right" class="panel" aria-label="Жонли графиклар">
+      <h2 class="ph"><span>Углерод ютилиши</span><span class="u">минг т CO₂/йил</span></h2>
+      <svg id="chC" class="chart" viewBox="0 0 300 140" role="img" aria-label="Йиллар бўйича углерод ютилиши"></svg>
+      <h2 class="ph"><span>Кредит тушуми ва смета</span><span class="u">млн $</span></h2>
+      <svg id="chR" class="chart" viewBox="0 0 300 124" role="img" aria-label="Йиғма кредит тушуми ва белбоғ сметаси"></svg>
+      <h2 class="ph"><span>dMRV занжири</span><span class="u">QazaqCarbon</span></h2>
+      <ul class="chain" id="chain"></ul>
+      <h2 class="ph" style="margin-top:6px"><span>Кўникмалар занжири</span><span class="u">мактаб → иш</span></h2>
+      <div class="pipe" id="pipe"></div>
+      <button type="button" class="btn linkbtn" id="aboutBtn">10 та манба ва ҳисоб-китоб</button>
+    </section>
+
+    <section id="card" class="panel" aria-live="polite">
+      <div class="ck" id="cardK"></div>
+      <h3 id="cardH"></h3>
+      <p id="cardP"></p>
+      <dl id="cardV" class="cv"></dl>
+      <div class="src" id="cardS"></div>
+    </section>
+
+    <nav id="dock" aria-label="Кластер қисмлари"><div class="dockbar" id="dockbar"></div></nav>
+  </div>
+</div>
+
+<div id="cursor" aria-hidden="true"><svg viewBox="0 0 26 26"><path d="M4 2l16 11-7 1.4 4.2 8.2-3 1.5-4.2-8.2L4 21z" fill="#1d2b27" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg><div class="rip" id="rip"></div></div>
+
+<div id="scrim" hidden></div>
+<section id="about" class="panel" hidden role="dialog" aria-modal="true" aria-labelledby="aboutH">
+  <div class="ahead"><h2 id="aboutH">10 та манба ва ҳисоб-китоб</h2><button type="button" class="btn" id="aboutClose">Ёпиш</button></div>
+  <p>Лойиҳанинг ўзаги — «Яшил белбоғ – Орол келажаги» (100 000 га, 3 йил, 8,2 млн $). Қолган тақдимотлар (UNEP/ILO «Табиатга асосланган ечимларда яшил кўникмалар» семинари, Алмати, 2026) ундан нима қўшилгани билан бирга:</p>
+  <div class="tw"><table>
+    <tr><th>Манба</th><th>Кластерга нима қўшилди</th></tr>
+    <tr><td>Яшил белбоғ (сизнинг лойиҳангиз)</td><td>100 000 га, 1 000 кўчат/га, гидроел (кўкариш 30 → 85 %), дронлар, смета 8,2 млн $, 500 иш ўрни</td></tr>
+    <tr><td>NBS-IA (Италия MASE, UNEP, OECD)</td><td>Йўл бўйлаб шамолтўсар дарахтлар ва қум учун «grass grid»; грант, камида 30 % ҳамкор маблағи; барқарор инфратузилмага 1 $ — 4 $ тежам</td></tr>
+    <tr><td>SKRI / Narxoz (B. Duprey)</td><td>Биочар ва торфли реактив мат: ифлосликни 85–100 % камайтиради, 10 йилгача ишлайди</td></tr>
+    <tr><td>UNECE IKI Nexus (A. Belokurov, RU ва EN)</td><td>Сунъий ботқоқлик, сувни табиий ушлаб туриш, агроўрмон йўлаги, яйлов ва жун; NbS каталоги</td></tr>
+    <tr><td>QazaqCarbon (A. Sailybaev)</td><td>dMRV занжири: Compass → Meridian → Digital Ranger → Canopy → Atlas; Plan Vivo; «Катон яшил белбоғи» пилоти (1 365,6 га, 100+ хўжалик)</td></tr>
+    <tr><td>UNICEF Қозоғистон (M. Valiyeva)</td><td>«Сув ва таълим», Қизилўрда: 55 мактаб, 55 сув клуби, 67 000+ бола, 1 773 ўқитувчи; Минтақавий яшил мактаблар платформаси</td></tr>
+    <tr><td>ILO (H. Chun)</td><td>NbS да 60–63 млн иш ўрни, 2030 гача +20–31 млн; лойиҳаларнинг 66 % ида малака етишмайди; меҳнат сифати</td></tr>
+    <tr><td>Innotech (A. Frigerio)</td><td>Етишмайдиган курслар: углерод мутахассиси, экологик маълумотлар таҳлили, яшил молия; Қозоғистонда 2022 йилда 48 895 + 8 608 яшил иш ўрни</td></tr>
+    <tr><td>A. Imashev</td><td>Эко-кон муҳандислиги магистратураси: назария ва амалиёт, рақамлаштириш, ESG</td></tr>
+  </table></div>
+  <h3>Модел қандай ишлайди</h3>
+  <ul>
+    <li>Ягона кирувчи катталик — лойиҳа бошидан ўтган йил. Белбоғ 3 йилда экилади; йўл ва агроўрмон қаторлари 1-йилда, реактив мат 0,5-йилда ўрнатилади (фараз).</li>
+    <li>Углерод: тўлиқ ривожланган саксовулзор гектарига йилига 1,1 т CO₂ (Mongabay келтирган 2023 йилги тадқиқот). 100 000 га да бу йилига ≈ 110 минг т — AIFC даги «Greening of the dried Aral Sea» лойиҳаси кўрсатган 100 000 т/йилга яқин.</li>
+    <li>Кредит текширувдан кейин 1 йил кечикиб чиқарилади (фараз). Нарх 5, 10 ёки 20 $/т — танлов, бозор нархи эмас.</li>
+    <li>Ўсиш эгри чизиғи, турлар улуши, йўл ва ботқоқлик ўлчамлари — фараз; дала маълумоти билан алмаштириш керак.</li>
+  </ul>
+  <h3>Текширишни сўрайдиган жойлар</h3>
+  <ul>
+    <li>Тақдимотдаги 15–20 млн т/йил чанг — бутун Аралқумнинг кўрсаткичига яқин (UNCCD: 15–75 млн т, ≈ 6 млн га). 100 000 га учун майдонга мутаносиб ҳисоб 0,25–1,25 млн т/йил.</li>
+    <li>Саксовул кўкариши ёғинга боғлиқ: кам ёмғирли йилларда ≈ 30 %, кўпроқ ёмғирда 50–70 % (Mongabay). Гидроел билан 85 % — тақдимотдаги даъво, пилотда текширилиши керак.</li>
+    <li>Йўл, сув ва кўникмалар қисмлари учун смета ҳали йўқ — NBS-IA грант аризаси учун ҳисоблаш керак.</li>
+  </ul>
+  <p>Ташқи манбалар: <a href="https://news.mongabay.com/2024/05/uzbekistan-plants-a-forest-where-a-sea-once-lay/" target="_blank" rel="noopener">Mongabay (2024)</a>, <a href="https://aifc.kz/greening-of-the-dried-aral-sea/" target="_blank" rel="noopener">AIFC: Greening of the dried Aral Sea</a>, <a href="https://www.unccd.int/resources/unccd-library/sand-and-dust-storms-aralkum-yearly-carry-out-75-million-tons-sand-dust-and" target="_blank" rel="noopener">UNCCD</a>, <a href="https://kun.uz/en/news/2022/02/05/sand-and-dust-storms-of-aralkum-yearly-carry-out-up-to-75-million-tons-of-sand-dust-and-salt" target="_blank" rel="noopener">Kun.uz</a>.</p>
+</section>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ================= utilities ================= */
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>{t=clamp(t,0,1);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;};
+function rng(seed){let s=seed>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const fmt=(v,d=0)=>Number.isFinite(v)?v.toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d}).replace('-','−'):'—';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const desk=()=>matchMedia('(min-width: 821px)').matches;
+
+/* ================= 1. the model: one input (years since start) drives every number ================= */
+const D={area:1e5,years:3,total:1e8,budget:8.2,jobs:500,survH:.85,survT:.30,
+  co2:1.1,            // t CO2 / ha / yr, mature saxaul (Mongabay, 2023 study)
+  aifc:100000,        // t CO2e / yr, AIFC "Greening of the dried Aral Sea", 100 000 ha target
+  mat:[85,100],matLife:10,matAt:.5, // SKRI reactive mat
+  roadAt:[.6,1.4],orchAt:[1,2],lag:1};
+const L=a=>1/(1+Math.exp(-2*(a-1.5))),L0=L(0);
+const grow=a=>a<=0?0:(L(a)-L0)/(1-L0);
+function beltE(t,s){const P=clamp(t/D.years,0,1),T=Math.min(t,D.years);let G=0;const n=30;if(T>0)for(let i=0;i<n;i++)G+=grow(t-(i+.5)*T/n)/n;return{P,G,E:P*G*s/D.survH};}
+const CTAB={};
+function co2Table(hydro){ // cumulative CO2 (t) vs year, step 0.05
+  const key=hydro?'h':'t';if(CTAB[key])return CTAB[key];const s=hydro?D.survH:D.survT,n=201,o=new Float32Array(n);let acc=0;
+  for(let i=1;i<n;i++){const y=(i-.5)*.05;acc+=D.co2*D.area*beltE(y,s).E*.05;o[i]=acc;}return CTAB[key]=o;}
+const cumAt=(tab,y)=>{if(y<=0)return 0;const f=Math.min(y,10)/.05,i=Math.min(Math.floor(f),199);return lerp(tab[i],tab[i+1],f-i);};
+function model(t,hydro,price){
+  const s=hydro?D.survH:D.survT,b=beltE(t,s),tab=co2Table(hydro);
+  const co2yr=D.co2*D.area*b.E, co2cum=cumAt(tab,t), credits=cumAt(tab,t-D.lag);
+  const matOn=t>=D.matAt, matAge=t-D.matAt;
+  return{t,hydro,s,...b,ha:D.area*b.P,co2yr,co2cum,credits,rev:credits*price/1e6,price,
+    matOn,matAge,mat:matOn?D.mat:[0,0],jobs:t>0?D.jobs:0,spent:D.budget*b.P};
+}
+
+/* ================= 2. renderer and studio ================= */
+const canvas=$('#gl');
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}
+catch(e){$('#nogl').hidden=false;throw e;}
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.localClippingEnabled=true;
+const scene=new THREE.Scene();
+const BG=new THREE.Color('#e7eae4');scene.background=BG;scene.fog=new THREE.Fog(BG,420,1100);
+const camera=new THREE.PerspectiveCamera(32,1,.05,2200);
+scene.add(new THREE.HemisphereLight('#f6f8f4','#b9b2a2',1.2));
+const sun=new THREE.DirectionalLight('#fff4e2',1.7);sun.position.set(-160,240,140);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-260,right:260,top:200,bottom:-200,near:40,far:700});sun.shadow.bias=-.0006;sun.shadow.normalBias=.08;
+scene.add(sun,sun.target);
+const M=(color,o={})=>new THREE.MeshStandardMaterial(Object.assign({color,roughness:.85},o));
+function add(geo,m,x=0,y=0,z=0,parent=scene,shadow=true){const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);if(shadow){o.castShadow=true;o.receiveShadow=true;}parent.add(o);return o;}
+const box=(w,h,d,m,x,y,z,p)=>add(new THREE.BoxGeometry(w,h,d),m,x,y,z,p);
+function tex(size,draw,rep){const c=document.createElement('canvas');c.width=c.height=size;draw(c.getContext('2d'),size);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;if(rep)t.repeat.set(...rep);t.anisotropy=8;return t;}
+const crust=tex(512,(g,S)=>{g.fillStyle='#e6e1d3';g.fillRect(0,0,S,S);const r=rng(21);
+  for(let i=0;i<260;i++){g.fillStyle=r()<.5?'rgba(214,201,172,.45)':'rgba(244,241,232,.6)';g.beginPath();g.arc(r()*S,r()*S,6+r()*26,0,7);g.fill();}
+  g.strokeStyle='rgba(150,140,120,.5)';g.lineWidth=1.3;const pts=[];for(let i=0;i<70;i++)pts.push([r()*S,r()*S]);
+  for(const [x,y] of pts){let best=[];for(const q of pts){const d=Math.hypot(q[0]-x,q[1]-y);if(d>1)best.push([d,q]);}best.sort((a,b)=>a[0]-b[0]);for(const [,q] of best.slice(0,3)){g.beginPath();g.moveTo(x,y);g.lineTo(q[0],q[1]);g.stroke();}}});
+crust.repeat.set(1/24,1/24);
+const soilTex=tex(256,(g,S)=>{g.fillStyle='#b89a72';g.fillRect(0,0,S,S);const r=rng(5);for(let i=0;i<1600;i++){g.fillStyle=['#a5865f','#c9ad86','#8f7352','#eae4d4'][Math.floor(r()*4)];g.fillRect(r()*S,r()*S,1+r()*3,1+r()*2);}g.fillStyle='rgba(240,236,224,.85)';g.fillRect(0,0,S,14);},[1,1]);
+const gridTex=tex(128,(g,S)=>{g.clearRect(0,0,S,S);g.strokeStyle='#b08a4a';g.lineWidth=7;g.strokeRect(4,4,S-8,S-8);g.strokeStyle='#c9a565';g.lineWidth=3;g.strokeRect(4,4,S-8,S-8);});
+const waterTex=tex(256,(g,S)=>{g.fillStyle='#6f9fae';g.fillRect(0,0,S,S);const r=rng(4);for(let i=0;i<220;i++){g.strokeStyle=`rgba(255,255,255,${.06+r()*.12})`;g.lineWidth=1+r()*2;const x=r()*S,y=r()*S;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+10,y+4,x+22,y);g.stroke();}},[1,6]);
+
+/* ================= 3. layout of the cluster (metres, wind blows +x) ================= */
+const PLOT={x0:-200,x1:-40,z0:-50,z1:50};        // seabed belt sample (1,6 ha of the 100 000 ha)
+const ROAD={x:0,w:8,z0:-170,z1:150};
+const GRID={x0:-34,x1:-18};                      // straw grass grid on drifting sand
+const CANAL={x:60,w:7,z0:-170,z1:22};
+const MAT={z0:-62,z1:-48};
+const POND={x:76,z:46,rx:30,rz:22};
+const ORCH={x0:128,x1:188,z0:6,z1:118};
+const PAST={x0:126,x1:198,z0:-106,z1:-24};
+const VIL={x:122,z:-138};
+const SEC={x:-170,z:48.75,w:2.4,d:2.4,h:1.2};
+
+const groundShape=new THREE.Shape([new THREE.Vector2(-900,-900),new THREE.Vector2(900,-900),new THREE.Vector2(900,900),new THREE.Vector2(-900,900)]);
+groundShape.holes.push(new THREE.Path([new THREE.Vector2(SEC.x-SEC.w/2,-(SEC.z-SEC.d/2)),new THREE.Vector2(SEC.x-SEC.w/2,-(SEC.z+SEC.d/2)),new THREE.Vector2(SEC.x+SEC.w/2,-(SEC.z+SEC.d/2)),new THREE.Vector2(SEC.x+SEC.w/2,-(SEC.z-SEC.d/2))]));
+const ground=add(new THREE.ShapeGeometry(groundShape),M('#ffffff',{map:crust,roughness:1}),0,0,0);ground.rotation.x=-Math.PI/2;ground.castShadow=false;
+/* irrigated land east of the canal: soil colour */
+const irr=add(new THREE.PlaneGeometry(130,300),M('#cdbf9e',{roughness:1,polygonOffset:true,polygonOffsetFactor:-1}),150,.02,-20,scene,false);irr.rotation.x=-Math.PI/2;irr.receiveShadow=true;
+const pastM=M('#c9c49a',{roughness:1,polygonOffset:true,polygonOffsetFactor:-2});
+const past=add(new THREE.PlaneGeometry(PAST.x1-PAST.x0,PAST.z1-PAST.z0),pastM,(PAST.x0+PAST.x1)/2,.04,(PAST.z0+PAST.z1)/2,scene,false);past.rotation.x=-Math.PI/2;past.receiveShadow=true;
+/* dunes */
+{const r=rng(8),m=M('#d8c9a6',{roughness:1});for(let i=0;i<30;i++){let x,z;do{x=-700+r()*660;z=(r()-.5)*700;}while(x>PLOT.x0-16&&x<GRID.x1+6&&z>-180&&z<170);const d=add(new THREE.SphereGeometry(1,20,10,0,Math.PI*2,0,Math.PI/2),m,x,0,z);d.scale.set(9+r()*16,.8+r()*2,6+r()*10);d.rotation.y=r()*3;}}
+
+/* ship of the Muynak fleet */
+{const g=new THREE.Group();g.position.set(-250,0,92);g.rotation.y=.5;g.rotation.z=.06;scene.add(g);
+ const s=new THREE.Shape();s.moveTo(-14,1.2);s.lineTo(12,1.2);s.quadraticCurveTo(16,2.2,17,5.5);s.lineTo(-15,5.5);s.lineTo(-15,2.4);s.quadraticCurveTo(-15,1.2,-14,1.2);
+ add(new THREE.ExtrudeGeometry(s,{depth:6,bevelEnabled:false}),M('#8b4a2b',{roughness:.95}),0,-1.4,-3,g);
+ box(9,3.2,4.6,M('#9a5a37',{roughness:.95}),-4,5.4,0,g);box(4,2,4,M('#7d4128',{roughness:.95}),-4,8,0,g);
+ add(new THREE.CylinderGeometry(.18,.22,9,10),M('#6e3b25'),4,9.5,0,g);}
+
+/* ================= 4. vegetation ================= */
+function colored(geo,c){const g=geo.index?geo.toNonIndexed():geo;const col=new THREE.Color(c),a=new Float32Array(g.attributes.position.count*3);for(let i=0;i<a.length;i+=3){a[i]=col.r;a[i+1]=col.g;a[i+2]=col.b;}g.setAttribute('color',new THREE.BufferAttribute(a,3));g.deleteAttribute('uv');return g;}
+function stem(parts,x0,z0,x1,y1,z1,rad,c){const a=V3(x0,0,z0),b=V3(x1,y1,z1),d=b.clone().sub(a),L=d.length();const g=new THREE.CylinderGeometry(rad*.7,rad,L,5);g.translate(0,L/2,0);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0,1,0),d.normalize()));g.translate(a.x,a.y,a.z);parts.push(colored(g,c));}
+function blob(parts,x,y,z,sx,sy,sz,c){const g=new THREE.IcosahedronGeometry(1,0);g.scale(sx,sy,sz);g.translate(x,y,z);parts.push(colored(g,c));}
+function plantGeo(k){const r=rng(k.length*97+k.charCodeAt(0)),P=[];
+  if(k==='sak'){for(let i=0;i<4;i++){const a=i*1.7+r(),d=.12+r()*.1;stem(P,0,0,Math.cos(a)*d,.55+r()*.15,Math.sin(a)*d,.035,'#6b5a45');}for(let i=0;i<7;i++){const a=r()*6.28,d=r()*.24;blob(P,Math.cos(a)*d,.55+r()*.38,Math.sin(a)*d,.16+r()*.08,.14+r()*.08,.16+r()*.08,['#8e9b74','#7f8d68','#a0a983'][i%3]);}}
+  else if(k==='cher'){stem(P,0,0,0,.3,0,.03,'#7a6a4e');for(let i=0;i<6;i++){const a=r()*6.28,d=r()*.2;blob(P,Math.cos(a)*d,.35+r()*.4,Math.sin(a)*d,.22+r()*.06,.2,.22+r()*.06,['#b3b56e','#a3aa63','#c2bf7c'][i%3]);}}
+  else if(k==='kan'){for(let i=0;i<6;i++){const a=i*1.05+r()*.4,d=.18+r()*.18;stem(P,0,0,Math.cos(a)*d,.6+r()*.35,Math.sin(a)*d,.02,'#9b5b3a');}for(let i=0;i<5;i++){const a=r()*6.28,d=.1+r()*.2;blob(P,Math.cos(a)*d,.6+r()*.3,Math.sin(a)*d,.12,.1,.12,'#7f9a5d');}}
+  else if(k==='qor'){for(let i=0;i<5;i++){const a=r()*6.28,d=r()*.25;blob(P,Math.cos(a)*d,.25+r()*.25,Math.sin(a)*d,.3,.24,.3,['#5f7d4b','#6c8a55'][i%2]);}}
+  else if(k==='elm'){stem(P,0,0,0,.45,0,.05,'#6b5440');for(let i=0;i<6;i++){const a=r()*6.28,d=r()*.16;blob(P,Math.cos(a)*d,.6+r()*.25,Math.sin(a)*d,.26,.22,.26,['#6f8f4e','#7f9d58','#5f7f45'][i%3]);}}
+  else if(k==='tam'){for(let i=0;i<7;i++){const a=r()*6.28,d=.1+r()*.2;stem(P,0,0,Math.cos(a)*d,.7+r()*.3,Math.sin(a)*d,.018,'#8a5a4a');blob(P,Math.cos(a)*d,.7+r()*.25,Math.sin(a)*d,.14,.18,.14,['#c79aa5','#9fb27f'][i%2]);}}
+  else if(k==='fruit'){stem(P,0,0,0,.45,0,.06,'#5e4634');for(let i=0;i<5;i++){const a=r()*6.28,d=r()*.14;blob(P,Math.cos(a)*d,.62+r()*.2,Math.sin(a)*d,.3,.24,.3,['#4f8a43','#5d9a4b'][i%2]);}}
+  else if(k==='reed'){for(let i=0;i<9;i++){const a=r()*6.28,d=r()*.25;stem(P,Math.cos(a)*d,Math.sin(a)*d,Math.cos(a)*d*1.3,.8+r()*.4,Math.sin(a)*d*1.3,.012,['#7c9a3e','#9bb256','#b5a35a'][i%3]);}}
+  return mergeGeometries(P);}
+const plantMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,flatShading:true});
+const deadGeo=(()=>{const P=[];for(let i=0;i<3;i++){const g=new THREE.CylinderGeometry(.012,.02,1,4);g.translate(0,.5,0);g.rotateZ((i-1)*.35);g.rotateY(i*2);P.push(colored(g,'#8a6f4f'));}return mergeGeometries(P);})();
+/* every planted thing in one list: x,z, species, planting time, survival draw, size */
+const SPEC=[{k:'sak',n:'Саксовул',H:3.4},{k:'cher',n:'Черкез',H:1.9},{k:'kan',n:'Қандим',H:1.7},{k:'qor',n:'Қорабуроқ',H:1.0},{k:'elm',n:'Қайрағоч',H:7},{k:'tam',n:'Юлғун',H:3.2},{k:'fruit',n:'Мевали дарахт',H:4.2},{k:'reed',n:'Қамиш',H:2.4}];
+const SHARE=[.55,.20,.15,.10];
+const PL=[];
+{const r=rng(77);
+ for(let i=0;i<40;i++)for(let j=0;j<40;j++){const x=PLOT.x0+2+i*4+(r()-.5)*.5,z=PLOT.z0+1.25+j*2.5+(r()-.5)*.4;const u=r();let sp=0,acc=0;for(let q=0;q<4;q++){acc+=SHARE[q];if(u<acc){sp=q;break;}}
+   PL.push({x,z,sp,tau:clamp((i+r()*.9)/40*D.years,0,D.years),surv:r(),size:.8+r()*.4,rot:r()*6.28,belt:1});}
+ const k=PL.reduce((b,p,i)=>Math.hypot(p.x-SEC.x,p.z-SEC.z)<Math.hypot(PL[b].x-SEC.x,PL[b].z-SEC.z)?i:b,0);Object.assign(PL[k],{x:SEC.x,z:SEC.z,sp:0,surv:.1,tau:.6,hero:true});
+ /* road windbreak: 3 rows upwind, 2 rows downwind, every 5 m */
+ for(const [x,sp] of[[-15,4],[-11,5],[-7,5],[8,5],[12,4]])for(let z=ROAD.z0+3;z<ROAD.z1;z+=5)PL.push({x:x+(r()-.5)*.6,z:z+(r()-.5)*.8,sp,tau:lerp(D.roadAt[0],D.roadAt[1],(z-ROAD.z0)/(ROAD.z1-ROAD.z0)),surv:r()*.6,size:.8+r()*.35,rot:r()*6.28});
+ /* agroforestry corridor */
+ for(let x=ORCH.x0+3;x<ORCH.x1;x+=6)for(let z=ORCH.z0+3;z<ORCH.z1;z+=5)PL.push({x:x+(r()-.5)*.6,z:z+(r()-.5)*.6,sp:6,tau:lerp(D.orchAt[0],D.orchAt[1],(x-ORCH.x0)/(ORCH.x1-ORCH.x0)),surv:r()*.5,size:.8+r()*.3,rot:r()*6.28});
+ /* reeds around the wetland */
+ for(let i=0;i<260;i++){const a=r()*6.283,k2=.82+r()*.24;PL.push({x:POND.x+Math.cos(a)*POND.rx*k2,z:POND.z+Math.sin(a)*POND.rz*k2,sp:7,tau:.4+r()*1.2,surv:r()*.4,size:.7+r()*.5,rot:r()*6.28});}
+}
+const counts=SPEC.map((_,q)=>PL.filter(p=>p.sp===q).length);
+const PM=SPEC.map((s,q)=>{const m=new THREE.InstancedMesh(plantGeo(s.k),plantMat,counts[q]);m.castShadow=q<7;m.receiveShadow=true;m.frustumCulled=false;scene.add(m);return m;});
+const DM=new THREE.InstancedMesh(deadGeo,plantMat,PL.length);DM.frustumCulled=false;scene.add(DM);
+{const idx=SPEC.map(()=>0);PL.forEach(p=>{p.k=idx[p.sp]++;});}
+const m4=new THREE.Matrix4(),qq=new THREE.Quaternion(),sc=V3(1,1,1),ps=V3(0,0,0);
+let plantKey='';
+const CELLX=16,CELLZ=10,cover=new Float32Array(CELLX*CELLZ);
+function updatePlants(t,s){
+  const key=t.toFixed(3)+'|'+s;if(key===plantKey)return;plantKey=key;cover.fill(0);let nd=0;
+  for(const p of PL){const a=t-p.tau,planted=a>0,alive=planted&&p.surv<(p.belt?s:.95),sp=SPEC[p.sp];
+    const h=alive?Math.max(.06,grow(a))*sp.H*p.size:0;qq.setFromAxisAngle(V3(0,1,0),p.rot);
+    sc.set(h,h,h);ps.set(p.x,0,p.z);m4.compose(ps,qq,sc);PM[p.sp].setMatrixAt(p.k,m4);
+    if(p.belt&&planted&&!alive&&a>.35){sc.set(.5,.35,.5);m4.compose(ps,qq,sc);DM.setMatrixAt(nd++,m4);}
+    if(p.belt&&alive){const ci=clamp(Math.floor((p.x-PLOT.x0)/10),0,CELLX-1),cj=clamp(Math.floor((p.z-PLOT.z0)/10),0,CELLZ-1),rr=.45*h;cover[cj*CELLX+ci]+=Math.PI*rr*rr/100;}}
+  DM.count=nd;PM.forEach(m=>m.instanceMatrix.needsUpdate=true);DM.instanceMatrix.needsUpdate=true;
+}
+
+/* ================= 5. engineered parts ================= */
+/* hydrogel section under one saxaul */
+const secPlane=new THREE.Plane(V3(0,0,-1),1e4);
+const soilM=M('#ffffff',{map:soilTex,roughness:1,side:THREE.DoubleSide});soilM.clippingPlanes=[secPlane];
+const topM=M('#ffffff',{map:crust,roughness:1});topM.clippingPlanes=[secPlane];
+add(new THREE.BoxGeometry(SEC.w,SEC.h,SEC.d),[soilM,soilM,topM,soilM,soilM,soilM],SEC.x,-SEC.h/2,SEC.z);
+const rootM=M('#8a6a48',{roughness:.9});rootM.clippingPlanes=[secPlane];
+const roots=new THREE.Group();roots.position.set(SEC.x,0,SEC.z);scene.add(roots);
+{const r=rng(14);for(let i=0;i<9;i++){const pts=[V3(0,0,0)];let x=0,y=0,z=0;const a=r()*6.28;for(let k=0;k<5;k++){x+=Math.cos(a)*(.04+r()*.07);z+=Math.sin(a)*(.04+r()*.07);y-=.1+r()*.08;pts.push(V3(x,y,z));}roots.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),20,.012-i*.0006,5),rootM));}}
+const gelM=new THREE.MeshStandardMaterial({color:'#5fb4e6',transparent:true,opacity:.75,roughness:.1});gelM.clippingPlanes=[secPlane];
+const gel=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),gelM,60);gel.frustumCulled=false;scene.add(gel);
+const gelPos=(()=>{const r=rng(31),a=[];for(let i=0;i<60;i++){const an=r()*6.28,d=.05+r()*.28;a.push([SEC.x+Math.cos(an)*d,-.08-r()*.45,SEC.z+Math.sin(an)*d*.9,.012+r()*.01]);}return a;})();
+
+/* road with traffic */
+box(ROAD.w,.12,ROAD.z1-ROAD.z0,M('#4b5150',{roughness:.9}),ROAD.x,.06,(ROAD.z0+ROAD.z1)/2);
+{const im=new THREE.InstancedMesh(new THREE.BoxGeometry(.15,.02,2.4),new THREE.MeshBasicMaterial({color:'#e8e2c8'}),64);let i=0;for(let z=ROAD.z0+2;z<ROAD.z1&&i<64;z+=5)im.setMatrixAt(i++,new THREE.Matrix4().makeTranslation(ROAD.x,.13,z));im.count=i;scene.add(im);}
+const cars=[];for(let i=0;i<5;i++){const g=new THREE.Group();scene.add(g);const truck=i%2===0;const c=['#b54b31','#2f5d7c','#e2b13a','#e7e9e4','#3b8562'][i];
+  box(2.2,1.6,truck?3:2.2,M(c,{roughness:.6}),0,1.1,truck?1.6:0,g);if(truck)box(2.3,2.4,5.5,M('#d9d4c4'),0,1.6,-2.6,g);else box(2,.8,4.2,M(c,{roughness:.6}),0,.6,0,g);
+  cars.push({g,dir:i%2?1:-1,ph:i*67,v:14+i*2});}
+/* straw grass grid: 1 x 1 m checkerboard on drifting sand */
+const gridM=new THREE.MeshStandardMaterial({map:gridTex,transparent:true,opacity:0,alphaTest:.05,roughness:1,polygonOffset:true,polygonOffsetFactor:-3,depthWrite:false});
+gridTex.repeat.set(GRID.x1-GRID.x0,ROAD.z1-ROAD.z0);
+const grid=add(new THREE.PlaneGeometry(GRID.x1-GRID.x0,ROAD.z1-ROAD.z0),gridM,(GRID.x0+GRID.x1)/2,.05,(ROAD.z0+ROAD.z1)/2,scene,false);grid.rotation.x=-Math.PI/2;
+const sandStrip=add(new THREE.PlaneGeometry(GRID.x1-GRID.x0+4,ROAD.z1-ROAD.z0),M('#dccca6',{roughness:1,polygonOffset:true,polygonOffsetFactor:-1}),(GRID.x0+GRID.x1)/2,.03,(ROAD.z0+ROAD.z1)/2,scene,false);sandStrip.rotation.x=-Math.PI/2;sandStrip.receiveShadow=true;
+
+/* drainage canal with the reactive mat (cut open on focus) */
+const matPlane=new THREE.Plane(V3(-1,0,0),1e4);
+const bankM=M('#b9a27c',{roughness:1});
+box(3,1,CANAL.z1-CANAL.z0,bankM,CANAL.x-(CANAL.w/2+1.5),.5,(CANAL.z0+CANAL.z1)/2);
+for(const [a,b] of[[CANAL.z0,MAT.z0-.1],[MAT.z1+.1,CANAL.z1]])box(3,1,b-a,bankM,CANAL.x+(CANAL.w/2+1.5),.5,(a+b)/2);
+box(CANAL.w,.04,CANAL.z1-CANAL.z0,M('#8d7a5c',{roughness:1}),CANAL.x,.03,(CANAL.z0+CANAL.z1)/2);
+const cwM=new THREE.MeshStandardMaterial({map:waterTex,color:'#8fb5bf',transparent:true,opacity:.62,roughness:.15,depthWrite:false});cwM.clippingPlanes=[matPlane];
+const cwater=add(new THREE.PlaneGeometry(CANAL.w,CANAL.z1-CANAL.z0),cwM,CANAL.x,.66,(CANAL.z0+CANAL.z1)/2,scene,false);cwater.rotation.x=-Math.PI/2;
+const matG=new THREE.Group();scene.add(matG);
+const bioM=M('#1f1d1b',{roughness:1}),peatM=M('#5b3a22',{roughness:1}),cageM=new THREE.LineBasicMaterial({color:'#7d8783'});
+box(CANAL.w-.2,.28,MAT.z1-MAT.z0,peatM,CANAL.x,.19,(MAT.z0+MAT.z1)/2,matG);box(CANAL.w-.2,.26,MAT.z1-MAT.z0,bioM,CANAL.x,.46,(MAT.z0+MAT.z1)/2,matG);
+{const eg=new THREE.EdgesGeometry(new THREE.BoxGeometry(CANAL.w-.1,.6,MAT.z1-MAT.z0,1,1,6));const l=new THREE.LineSegments(eg,cageM);l.position.set(CANAL.x,.33,(MAT.z0+MAT.z1)/2);matG.add(l);}
+const matBank=box(3,1,MAT.z1-MAT.z0+.2,M('#b9a27c',{roughness:1,side:THREE.DoubleSide}),CANAL.x+CANAL.w/2+1.5,.5,(MAT.z0+MAT.z1)/2);matBank.material=matBank.material.clone();matBank.material.clippingPlanes=[matPlane];
+/* wetland */
+const pondM=new THREE.MeshStandardMaterial({map:waterTex.clone(),color:'#7fb2c4',transparent:true,opacity:.88,roughness:.12,depthWrite:false});pondM.map.repeat.set(3,3);
+const pond=add(new THREE.CircleGeometry(1,48),pondM,POND.x,.1,POND.z,scene,false);pond.rotation.x=-Math.PI/2;pond.scale.set(POND.rx,POND.rz,1);
+const pondBed=add(new THREE.CircleGeometry(1,48),M('#8f8a6a'),POND.x,.03,POND.z,scene,false);pondBed.rotation.x=-Math.PI/2;pondBed.scale.set(POND.rx*1.02,POND.rz*1.02,1);
+box(22,.1,3,M('#86b3b0',{transparent:true,opacity:.8}),POND.x+POND.rx+8,.08,POND.z);
+/* drip lines in the corridor */
+{const im=new THREE.InstancedMesh(new THREE.BoxGeometry(.06,.06,ORCH.z1-ORCH.z0),M('#222'),12);let i=0;for(let x=ORCH.x0+3;x<ORCH.x1&&i<12;x+=6)im.setMatrixAt(i++,new THREE.Matrix4().makeTranslation(x+.6,.05,(ORCH.z0+ORCH.z1)/2));im.count=i;scene.add(im);}
+/* sheep on the pasture */
+const sheep=[];{const r=rng(12);const body=new THREE.SphereGeometry(.7,10,8);body.scale(1.3,.8,.8);const im=new THREE.InstancedMesh(body,M('#f1ede2',{roughness:1}),36);im.castShadow=true;scene.add(im);for(let i=0;i<36;i++)sheep.push({x:lerp(PAST.x0+6,PAST.x1-6,r()),z:lerp(PAST.z0+6,PAST.z1-6,r()),ph:r()*6.28});sheep.im=im;}
+/* village: school with water club, training and research centre, houses, water tower */
+const vil=new THREE.Group();vil.position.set(VIL.x,0,VIL.z);scene.add(vil);
+box(26,7,12,M('#f2efe6'),0,3.5,0,vil);box(27,.5,13,M('#3b8562'),0,7.25,0,vil);box(8,2.2,.2,M('#2f7ea1'),0,5.2,6.1,vil);
+for(let i=0;i<4;i++){const p=box(4,.08,2.4,M('#1e3a5f',{roughness:.3}),-9+i*6,8.1,0,vil);p.rotation.x=-.35;}
+box(18,6,10,M('#e8ece8'),-30,3,6,vil);box(18.6,.4,10.6,M('#9aa59f'),-30,6.2,6,vil);
+for(let i=0;i<6;i++){const h=box(7,3.6,6,M(['#e4d9c4','#d9c9ae','#ece3d1'][i%3]),18+(i%3)*10,1.8,-6+Math.floor(i/3)*14,vil);void h;}
+add(new THREE.CylinderGeometry(.5,.5,14,8),M('#9aa3a0',{metalness:.4}),-48,7,-8,vil);add(new THREE.CylinderGeometry(3,2.4,4,14),M('#d6dcd8'),-48,15,-8,vil);
+/* digital rangers walking between village, canal and the belt */
+const rangers=[];{const bm=M('#e07a2e'),hm=M('#d7b38f');for(let i=0;i<6;i++){const g=new THREE.Group();scene.add(g);add(new THREE.CylinderGeometry(.35,.4,1.3,10),bm,0,.95,0,g);add(new THREE.SphereGeometry(.28,10,8),hm,0,1.85,0,g);box(.35,.25,.04,M('#1e293b'),.35,1.25,.3,g);rangers.push({g,ph:i/6});}}
+const RPATH=[V3(VIL.x-40,0,VIL.z+20),V3(CANAL.x+8,0,-60),V3(CANAL.x+8,0,0),V3(30,0,10),V3(-25,0,30),V3(-60,0,52),V3(-150,0,54),V3(-150,0,-56),V3(-60,0,-56),V3(-25,0,-80),V3(30,0,-120)];
+const rCurve=new THREE.CatmullRomCurve3(RPATH,true,'centripetal');
+/* drone over the planting front, satellite above */
+const drone=new THREE.Group();scene.add(drone);
+{const dm=M('#2f3a37',{roughness:.5}),am=M('#d0d6d2',{roughness:.5});box(.7,.18,.7,dm,0,0,0,drone);for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2;const arm=box(.9,.06,.08,am,Math.cos(a)*.45,0,Math.sin(a)*.45,drone);arm.rotation.y=-a;const ro=add(new THREE.CylinderGeometry(.32,.32,.02,16),new THREE.MeshStandardMaterial({color:'#9aa3a0',transparent:true,opacity:.45}),Math.cos(a)*.9,.12,Math.sin(a)*.9,drone,false);ro.userData.rot=1;}box(.3,.25,.3,M('#3b8562'),0,-.2,0,drone);}
+drone.scale.setScalar(2.2);
+const sat=new THREE.Group();scene.add(sat);box(4,2.6,2.6,M('#d6c27a',{metalness:.5,roughness:.4}),0,0,0,sat);for(const s of[-1,1])box(8,.1,2.8,M('#1e3a5f',{roughness:.3,metalness:.3}),s*6.2,0,0,sat);
+const scanM=new THREE.MeshBasicMaterial({color:'#3b8562',transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+const scan=add(new THREE.ConeGeometry(1,1,40,1,true),scanM,0,0,0,scene,false);
+/* NDVI overlay on the belt sample */
+const ndCv=document.createElement('canvas');ndCv.width=CELLX*8;ndCv.height=CELLZ*8;const ndTex=new THREE.CanvasTexture(ndCv);ndTex.colorSpace=THREE.SRGBColorSpace;
+const ndM=new THREE.MeshBasicMaterial({map:ndTex,transparent:true,opacity:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+const nd=add(new THREE.PlaneGeometry(PLOT.x1-PLOT.x0,PLOT.z1-PLOT.z0),ndM,(PLOT.x0+PLOT.x1)/2,.06,0,scene,false);nd.rotation.x=-Math.PI/2;
+const ndviOf=c=>.05+.20*clamp(c*1.6,0,1);
+function ndColor(v){const t=clamp((v-.05)/.2,0,1);const a=[[178,64,44],[226,183,64],[59,133,98]];const k=t<.5?0:1,u=t<.5?t/.5:(t-.5)/.5;return a[k].map((c,i)=>Math.round(lerp(c,a[k+1][i],u)));}
+function drawNDVI(){const g=ndCv.getContext('2d');for(let j=0;j<CELLZ;j++)for(let i=0;i<CELLX;i++){const [r,gg,b]=ndColor(ndviOf(cover[j*CELLX+i]));g.fillStyle=`rgb(${r},${gg},${b})`;g.fillRect(i*8,j*8,8,8);}ndTex.needsUpdate=true;}
+
+/* soft points: dust over bare ground, pollutants in the canal, CO2 into the belt */
+const ptsMat=new THREE.ShaderMaterial({uniforms:{uScale:{value:600}},transparent:true,depthWrite:false,
+  vertexShader:`attribute float size;attribute float alpha;attribute vec3 tint;varying float vA;varying vec3 vC;uniform float uScale;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*mv;gl_PointSize=min(size*uScale/max(-mv.z,.05),400.0);vA=alpha;vC=tint;}`,
+  fragmentShader:`varying float vA;varying vec3 vC;void main(){vec2 d=gl_PointCoord-.5;float r=length(d)*2.0;if(r>1.0)discard;float a=vA*(1.0-smoothstep(.3,1.0,r));gl_FragColor=vec4(vC,a);}`});
+function cloud(n,tint,clip){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));g.setAttribute('size',new THREE.BufferAttribute(new Float32Array(n),1));g.setAttribute('alpha',new THREE.BufferAttribute(new Float32Array(n),1));const c=new THREE.Color(tint),t=new Float32Array(n*3);for(let i=0;i<n;i++)t.set([c.r,c.g,c.b],i*3);g.setAttribute('tint',new THREE.BufferAttribute(t,3));const p=new THREE.Points(g,ptsMat);p.frustumCulled=false;scene.add(p);return p;}
+const ND=1500,dust=cloud(ND,'#d9ccb2'),NPOL=260,pol=cloud(NPOL,'#c0392b'),NCO=220,co2p=cloud(NCO,'#7aa6c2');
+const dSeed=(()=>{const r=rng(55),a=[];for(let i=0;i<ND;i++)a.push([-420+r()*420,-150+r()*290,r(),r(),r()]);return a;})();
+const pSeed=(()=>{const r=rng(66),a=[];for(let i=0;i<NPOL;i++)a.push([r(),r(),r()]);return a;})();
+const cSeed=(()=>{const r=rng(67),a=[];for(let i=0;i<NCO;i++)a.push([PLOT.x0+r()*(PLOT.x1-PLOT.x0),PLOT.z0+r()*(PLOT.z1-PLOT.z0),r()]);return a;})();
+const coverAt=(x,z)=>{if(x<PLOT.x0||x>PLOT.x1||z<PLOT.z0||z>PLOT.z1)return 0;return cover[clamp(Math.floor((z-PLOT.z0)/10),0,CELLZ-1)*CELLX+clamp(Math.floor((x-PLOT.x0)/10),0,CELLX-1)];};
+
+/* ================= 6. foci, camera, tour ================= */
+const FOCI={
+  overview:{label:'Умумий',     cam:{t:[-22,0,-8],p:[40,360,420]},anchor:null},
+  belt:    {label:'Белбоғ',     cam:{t:[-130,2,0],p:[-50,62,118]},anchor:[-120,4,0]},
+  hydro:   {label:'Гидроел',    cam:{t:[SEC.x,-.28,SEC.z],p:[SEC.x+2.1,1.15,SEC.z+3.4]},anchor:[SEC.x,-.3,SEC.z+.1]},
+  road:    {label:'Йўл ҳимояси',cam:{t:[-6,2,10],p:[46,24,74]},anchor:[-26,.5,0]},
+  water:   {label:'Сув тозалаш',cam:{t:[CANAL.x,.4,-55],p:[CANAL.x+11,7.5,-36]},anchor:[CANAL.x,.5,-55]},
+  farm:    {label:'Ботқоқ ва боғ',cam:{t:[128,2,48],p:[64,58,170]},anchor:[POND.x,0,POND.z]},
+  carbon:  {label:'Углерод ва dMRV',cam:{t:[-110,0,0],p:[-20,230,190]},anchor:[-120,1,0]},
+  skills:  {label:'Кўникмалар',  cam:{t:[VIL.x-10,4,VIL.z+6],p:[VIL.x-70,34,VIL.z+74]},anchor:[VIL.x,8,VIL.z]},
+};
+const ORDER=Object.keys(FOCI);
+const SCRIPT=[
+  {t:0, focus:'overview'},
+  {t:6, focus:'belt',  btn:'f-belt'},
+  {t:14,focus:'hydro', btn:'f-hydro'},
+  {t:21,focus:'road',  btn:'f-road'},
+  {t:29,focus:'water', btn:'f-water'},
+  {t:37,focus:'farm',  btn:'f-farm'},
+  {t:44,focus:'carbon',btn:'f-carbon'},
+  {t:47,focus:'carbon',btn:'p20',price:20},
+  {t:51,focus:'carbon',btn:'p10',price:10},
+  {t:54,focus:'skills',btn:'f-skills'},
+  {t:62,focus:'overview',btn:'f-overview'},
+];
+const TOUR_LEN=69,DRIFT=.02;
+const yTour=t=>t<6?10:t<14?2.4*((t-6)/8):t<21?2.4:t<44?2.4+5.6*((t-21)/23):t<62?8+2*((t-44)/18):10;
+const priceTour=t=>t>=47&&t<51?20:10;
+function beatIndex(t){let i=0;for(let k=0;k<SCRIPT.length;k++)if(SCRIPT[k].t<=t)i=k;return i;}
+function runStart(i){let k=i;while(k>0&&SCRIPT[k-1].focus===SCRIPT[i].focus)k--;return SCRIPT[k].t;}
+let distScale=1;
+function presetPose(focus,drift){const f=FOCI[focus].cam,T=V3(...f.t),off=V3(...f.p).sub(T).multiplyScalar(distScale);off.applyAxisAngle(V3(0,1,0),drift);return{t:T,p:T.clone().add(off)};}
+function blendPose(a,b,u){const t=a.t.clone().lerp(b.t,u);const sa=new THREE.Spherical().setFromVector3(a.p.clone().sub(a.t)),sb=new THREE.Spherical().setFromVector3(b.p.clone().sub(b.t));let d=sb.theta-sa.theta;d=Math.atan2(Math.sin(d),Math.cos(d));const s=new THREE.Spherical(Math.exp(lerp(Math.log(sa.radius),Math.log(sb.radius),u)),lerp(sa.phi,sb.phi,u),sa.theta+d*u);return{t,p:t.clone().add(V3(0,0,0).setFromSpherical(s))};}
+function tourPose(t,startPose){const i=beatIndex(t),b=SCRIPT[i],rs=runStart(i),d=reduced?0:DRIFT;let pose=presetPose(b.focus,Math.sin((t-rs)*d*2)*.16);
+  if(rs===b.t){const u=(t-b.t)/1.9;if(u<1){const prev=i===0?startPose:presetPose(SCRIPT[i-1].focus,Math.sin((t-runStart(i-1))*d*2)*.16);if(prev)pose=blendPose(prev,pose,ease(u));}}return pose;}
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=.08;controls.maxPolarAngle=Math.PI*.495;controls.minDistance=1.2;controls.maxDistance=900;controls.enabled=false;
+const curTarget=V3(0,0,0);
+function applyPose(p){camera.position.copy(p.p);camera.lookAt(p.t);curTarget.copy(p.t);}
+const curPose=()=>({p:camera.position.clone(),t:curTarget.clone()});
+applyPose(presetPose('overview',0));
+
+/* ================= 7. state and UI ================= */
+const live={y:10,hydro:true,price:10,focus:'overview'};
+const tour={active:!reduced,t:0,startPose:curPose()};
+let camTween=null,lastInput=-1e9,clock=0,last=performance.now(),yAct=10;
+const vis={cut:0,mcut:0,ndvi:0,scan:0,grid:0};
+function stateNow(){if(tour.active){const b=SCRIPT[beatIndex(tour.t)];return{y:yTour(tour.t),hydro:true,price:priceTour(tour.t),focus:b.focus};}return{...live};}
+function stopTour(){if(!tour.active)return;const s=stateNow();tour.active=false;Object.assign(live,{y:Math.round(s.y*20)/20,hydro:s.hydro,price:s.price,focus:s.focus});controls.target.copy(curTarget);controls.enabled=true;controls.update();syncControls();setCursor(false);}
+function startTour(){tour.active=true;tour.t=0;tour.startPose=curPose();camTween=null;controls.enabled=false;syncControls();}
+function onUser(e){if(e.target&&e.target.closest&&e.target.closest('#tourBtn'))return;lastInput=clock;if(tour.active)stopTour();}
+for(const ev of['pointerdown','wheel','keydown','touchstart'])document.addEventListener(ev,onUser,{capture:true,passive:true});
+const dock=$('#dockbar');
+ORDER.forEach((k,i)=>{const b=document.createElement('button');b.type='button';b.className='fbtn';b.id='f-'+k;b.innerHTML=`<span class="k">${i+1}</span>${FOCI[k].label}`;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>setFocus(k));dock.appendChild(b);});
+function setFocus(k){live.focus=k;camTween={from:curPose(),to:presetPose(k,0),t0:clock,dur:1.7};controls.enabled=false;syncControls();}
+document.addEventListener('keydown',e=>{if(e.target.matches('input'))return;const n=+e.key;if(n>=1&&n<=ORDER.length)setFocus(ORDER[n-1]);});
+const yIn=$('#yr');yIn.addEventListener('input',()=>{live.y=+yIn.value;syncControls();});
+$('#hydro').addEventListener('change',e=>{live.hydro=e.target.checked;});
+for(const p of[5,10,20])$('#p'+p).addEventListener('click',()=>{live.price=p;syncControls();});
+$('#tourBtn').addEventListener('click',()=>{if(tour.active){lastInput=clock;stopTour();}else startTour();});
+const about=$('#about'),scrim=$('#scrim');
+const openAbout=o=>{about.hidden=!o;scrim.hidden=!o;if(o)$('#aboutClose').focus();};
+$('#aboutBtn').addEventListener('click',()=>openAbout(true));$('#aboutClose').addEventListener('click',()=>openAbout(false));scrim.addEventListener('click',()=>openAbout(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!about.hidden)openAbout(false);});
+function syncControls(){
+  const s=stateNow();
+  yIn.value=String(s.y);$('#yOut').textContent=fmt(s.y,1);$('#hydro').checked=s.hydro;
+  for(const p of[5,10,20])$('#p'+p).setAttribute('aria-pressed',s.price===p);
+  for(const k of ORDER)$('#f-'+k).setAttribute('aria-pressed',s.focus===k);
+  $('#tourBox').classList.toggle('live',!tour.active);
+  $('#tourTxt').textContent=tour.active?'Авто тур':'Сиз бошқаряпсиз';
+  $('#tourBtn').textContent=tour.active?'Тўхтатиш':'Авто турни бошлаш';
+}
+
+/* labels */
+const LABELS=[
+  {txt:'1 · Яшил белбоғ',z:1,at:[-120,6,-54],show:['overview','carbon']},
+  {txt:'2 · Йўл ҳимояси',z:1,at:[-8,9,-170],show:['overview']},
+  {txt:'3 · Реактив мат',z:1,at:[CANAL.x,3,-55],show:['overview']},
+  {txt:'4 · Ботқоқлик',z:1,at:[POND.x,3,POND.z],show:['overview']},
+  {txt:'5 · Агроўрмон ва яйлов',z:1,at:[158,7,ORCH.z1],show:['overview']},
+  {txt:'6 · Мўйноқ: мактаб ва марказ',z:1,at:[VIL.x,12,VIL.z],show:['overview']},
+  {txt:'Мўйноқ кемаси',at:[-250,12,92],show:['belt']},
+  {txt:'Дрон',drone:1,show:['belt']},
+  {txt:'Гидроел',at:[SEC.x+.32,-.2,SEC.z+.05],show:['hydro']},
+  {txt:'Илдиз',at:[SEC.x-.25,-.42,SEC.z+.05],show:['hydro']},
+  {txt:'Шўр қатлам',at:[SEC.x+.9,-.03,SEC.z+.05],show:['hydro']},
+  {txt:'Шамолтўсар қаторлар',at:[-11,8,40],show:['road']},
+  {txt:'Сомон тўр 1 × 1 м',at:[-26,.5,20],show:['road']},
+  {txt:'Йўл',at:[0,.5,60],show:['road']},
+  {txt:'Биочар',at:[CANAL.x+.4,.6,MAT.z1-2],show:['water']},
+  {txt:'Торф',at:[CANAL.x+2.6,.3,MAT.z1-1],show:['water']},
+  {txt:'Ифлос сув',at:[CANAL.x,.8,MAT.z0-5],show:['water']},
+  {txt:'Тоза сув',at:[CANAL.x,.8,MAT.z1+5],show:['water']},
+  {txt:'Сунъий ботқоқлик',at:[POND.x,2,POND.z],show:['farm']},
+  {txt:'Агроўрмон йўлаги',at:[158,6,60],show:['farm']},
+  {txt:'Яйлов',at:[162,2,-60],show:['farm','skills']},
+  {txt:'Сунъий йўлдош · Compass, Canopy',sat:1,show:['carbon']},
+  {txt:'Мактаб · сув клуби',at:[VIL.x,9,VIL.z+6],show:['skills']},
+  {txt:'Илмий-ўқув маркази',at:[VIL.x-30,8,VIL.z+11],show:['skills']},
+  {txt:'Digital Ranger',ranger:0,show:['skills','water','carbon']},
+];
+const labelsEl=$('#labels');
+for(const L of LABELS){const d=document.createElement('div');d.className='chip'+(L.z?' z':'');d.innerHTML=`${L.txt}<b></b>`;L.el=d;L.v=L.at?V3(...L.at):V3();labelsEl.appendChild(d);}
+
+/* charts */
+const xY=y=>40+y/10*252;
+const TAB={h:co2Table(true),t:co2Table(false)};
+function drawCO2(m){
+  const yy=v=>12+(130-v)/130*96;
+  let s='';for(const v of[0,40,80,120]){s+=`<line class="grid" x1="40" x2="292" y1="${yy(v)}" y2="${yy(v)}"/><text class="axis" x="34" y="${yy(v)+3}" text-anchor="end">${v}</text>`;}
+  for(const v of[0,3,5,10])s+=`<text class="axis" x="${xY(v)}" y="122" text-anchor="middle">${v}</text>`;
+  s+=`<line class="ref" x1="40" x2="292" y1="${yy(100)}" y2="${yy(100)}"/><text class="refl" x="44" y="${yy(100)-4}">AIFC лойиҳаси: 100 минг т/йил</text>`;
+  const pts=(hyd,lim)=>{let o='';const sv=hyd?D.survH:D.survT;for(let i=0;i<=100;i++){const y=i/10;if(y>lim+1e-6)break;o+=`${xY(y).toFixed(1)},${yy(D.co2*D.area*beltE(y,sv).E/1000).toFixed(1)} `;}return o;};
+  s+=`<polyline class="ghost" points="${pts(m.hydro,10)}"/><polyline class="done" points="${pts(m.hydro,m.t)}${xY(m.t).toFixed(1)},${yy(m.co2yr/1000).toFixed(1)}"/><circle class="mk" cx="${xY(m.t)}" cy="${yy(m.co2yr/1000)}" r="4.5"/>`;
+  s+=`<text class="val" x="${Math.min(xY(m.t)+7,246)}" y="${yy(m.co2yr/1000)+14}">${fmt(m.co2yr/1000,0)}</text><text class="xl" x="292" y="136" text-anchor="end">йил · 1,1 т CO₂/га/йил</text>`;
+  $('#chC').innerHTML=s;
+}
+function drawRev(m){
+  const top=Math.max(16,m.price*1.6),yy=v=>10+(top-v)/top*88;
+  let s='';for(const v of[0,top/2,top]){s+=`<line class="grid" x1="40" x2="292" y1="${yy(v)}" y2="${yy(v)}"/><text class="axis" x="34" y="${yy(v)+3}" text-anchor="end">${fmt(v,0)}</text>`;}
+  for(const v of[0,3,5,10])s+=`<text class="axis" x="${xY(v)}" y="110" text-anchor="middle">${v}</text>`;
+  s+=`<line class="ref" x1="40" x2="292" y1="${yy(D.budget)}" y2="${yy(D.budget)}"/><text class="refl" x="44" y="${yy(D.budget)-4}">белбоғ сметаси 8,2</text>`;
+  const tab=m.hydro?TAB.h:TAB.t,pts=lim=>{let o='';for(let i=0;i<=100;i++){const y=i/10;if(y>lim+1e-6)break;o+=`${xY(y).toFixed(1)},${yy(cumAt(tab,y-D.lag)*m.price/1e6).toFixed(1)} `;}return o;};
+  s+=`<polyline class="revg" points="${pts(10)}"/><polyline class="rev" points="${pts(m.t)}${xY(m.t).toFixed(1)},${yy(m.rev).toFixed(1)}"/><circle class="mk" cx="${xY(m.t)}" cy="${yy(m.rev)}" r="4"/>`;
+  s+=`<text class="val" x="${Math.min(xY(m.t)+7,250)}" y="${yy(m.rev)-6}">${fmt(m.rev,1)}</text><text class="xl" x="292" y="121" text-anchor="end">йиғма тушум, ${m.price} $/т (фараз)</text>`;
+  $('#chR').innerHTML=s;
+}
+const CHAIN=[['Compass','Спутник орқали углерод салоҳияти ва олдиндан ТИА',0],['Meridian','Кадастр ва координаталар',.3],['Digital Ranger','Маҳаллий жамоа дала маълумотини йиғади',.5],['Canopy','Рақамли мониторинг ва dMRV',1],['Atlas','Очиқ реестр ва инвестиция шлюзи',D.lag+1]];
+function drawChain(m){
+  $('#chain').innerHTML=CHAIN.map(([n,d,at],i)=>{const on=m.t>=at,run=on&&(i===2||i===3);const val=i===4?(m.credits>0?`${fmt(m.credits/1000,0)} минг т`:'кутилмоқда'):i===3&&on?`${fmt(m.co2cum/1000,0)} минг т`:on?'тайёр':'кейин';
+    return`<li class="${run?'run':on?'on':''}"><span class="st"></span><span><b>${n}</b><small>${d}</small></span><i>${val}</i></li>`;}).join('');
+}
+$('#pipe').innerHTML=`<div><b>Мактаб</b>Сув клублари; Қизилўрдада 55 мактаб, 67 000+ бола</div><span>→</span><div><b>Университет</b>Углерод, экологик маълумотлар, эко-кон курслари</div><span>→</span><div><b>Иш</b>Лойиҳалаш · бажариш ва мониторинг · молия</div>`;
+const vv=(dt,dd,cls='')=>`<div><dt>${dt}</dt><dd class="${cls}">${dd}</dd></div>`;
+function cardFor(f,m){
+  switch(f){
+    case'overview':return{k:'Умумий кўриниш',h:'Битта ҳудуд — олтита табиий ечим',p:'Мўйноқ атрофида: қуриган тубдаги яшил белбоғ, йўл ҳимояси, коллектор сувини тозалайдиган реактив мат, ботқоқлик, агроўрмон ва яйлов, мактаб ва ўқув маркази. Ҳаммаси битта dMRV ва битта кўникмалар занжири билан боғланган.',
+      v:vv('Белбоғ','100 000<small>га</small>')+vv('Белбоғ сметаси',`${fmt(D.budget,1)}<small>млн $</small>`)+vv('Иш ўринлари',`${D.jobs}`),s:'Манба: Яшил белбоғ + 9 та семинар тақдимоти'};
+    case'belt':return{k:'1 · Яшил белбоғ',h:'Қуриган тубда аралаш экиш, дрон ва гидроел',p:'Саксовул, черкез, қандим ва қорабуроқ: гектарига 1 000 кўчат, 3 йилда 100 000 га. Дрон шўрхокка капсулали уруғ сепади.',
+      v:vv('Экилди',`${fmt(m.ha,0)}<small>га</small>`)+vv('Кўкариш',`${fmt(m.s*100,0)}<small>%</small>`)+vv('Самара',`${fmt(m.E*100,0)}<small>%</small>`),s:'Манба: Яшил белбоғ'};
+    case'hydro':return{k:'1 · Гидроел',h:'Илдиз атрофида намлик сақловчи полимер',p:'Полимер тупроқ намлигини 3–5 баробар оширади, суғоришсиз кўкариш 30 % дан 85 % га кўтарилади. Кам ёғинли йилларда гидроелсиз кўкариш ≈ 30 % (Mongabay).',
+      v:vv('Кўкариш',`${fmt(m.s*100,0)}<small>%</small>`,m.hydro?'ok':'')+vv('Тупроқ намлиги',m.hydro?'×3…5':'×1'),s:'Манба: Яшил белбоғ; Mongabay (2024)'};
+    case'road':return{k:'2 · Йўл ҳимояси',h:'Шамолтўсар дарахтлар ва сомон тўр',p:'NBS-IA тавсиясидек: йўл бўйлаб дарахт қаторлари чанг бўронини ушлайди, кўчма қумга 1 × 1 м сомон тўр ётқизилади. Грант камида 30 % ҳамкор маблағи билан берилади.',
+      v:vv('Тежам','1 $ → 4 $')+vv('Ҳамкор улуши','≥ 30<small>%</small>')+vv('Қаторлар','3 + 2'),s:'Манба: NBS-IA (Италия MASE, UNEP, OECD)'};
+    case'water':return{k:'3 · Сув тозалаш',h:'Коллектордаги реактив мат: биочар ва торф',p:'Ифлос сув мат орқали оқади: оғир металл ва ифлосликлар биочар ва торфга ўтиради. Энергия ва кимёвий модда керак эмас, 10 йилгача ишлайди.',
+      v:vv('Камайтиради',m.matOn?`${m.mat[0]}–${m.mat[1]}<small>%</small>`:'ўрнатилмаган',m.matOn?'ok':'')+vv('Мат ёши',m.matOn?`${fmt(m.matAge,1)}<small>/ 10 йил</small>`:'—'),s:'Манба: SKRI / Narxoz (B. Duprey)'};
+    case'farm':return{k:'4–5 · Ботқоқлик, агроўрмон, яйлов',h:'Сувни ушлаб, қайта ишлатиш',p:'Тозаланган сув сунъий ботқоқликка тушади, у ердан агроўрмон йўлагига ва яйловга боради. UNECE мисолларидаги каби: сув сақлаш → мол суғориш → боғ, жун эса ўғит ва сувни ушловчи материал бўлади.',
+      v:vv('Мевали дарахтлар',`${fmt(PL.filter(p=>p.sp===6&&m.t>p.tau).length,0)}<small>туп</small>`)+vv('Яйлов','тикланмоқда'),s:'Манба: UNECE IKI Nexus (A. Belokurov)'};
+    case'carbon':return{k:'6 · Углерод ва dMRV',h:'Ерда қилинган иш — кредитга, кредит — пулга',p:'Compass ва Meridian ҳудудни баҳолайди ва чегаралайди, Digital Ranger жамоаси дала маълумотини йиғади, Canopy ютилишни ҳисоблайди, Atlas кредитни реестрга чиқаради. Методология: VM0047 ARR ёки Plan Vivo.',
+      v:vv('Йилига',`${fmt(m.co2yr/1000,0)}<small>минг т CO₂</small>`)+vv('Кредит',`${fmt(m.credits/1000,0)}<small>минг т</small>`)+vv('Тушум',`${fmt(m.rev,1)}<small>млн $</small>`),s:'Манба: QazaqCarbon; AIFC; Mongabay'};
+    case'skills':return{k:'7 · Кўникмалар',h:'Мактабдан ишгача битта занжир',p:'Мактабда сув клублари (UNICEF «Сув ва таълим»), университетда етишмайдиган курслар (углерод мутахассиси, экологик маълумотлар таҳлили, эко-кон муҳандислиги), лойиҳада иш ўрни. NbS лойиҳаларининг 66 % ида малака етишмайди — занжир шунинг учун керак.',
+      v:vv('Лойиҳада','500<small>иш ўрни</small>')+vv('Малака етишмайди','66<small>% лойиҳада</small>')+vv('Намуна','55<small>мактаб</small>'),s:'Манба: UNICEF, ILO, Innotech, A. Imashev, QazaqCarbon'};
+  }
+}
+let lastCard='';
+function updatePanels(m,s){
+  $('#yOut').textContent=fmt(s.y,1);
+  $('#r-ha').textContent=fmt(m.ha,0);$('#r-sv').textContent=fmt(m.s*100,0);$('#r-e').textContent=fmt(m.E*100,0);
+  $('#r-cy').textContent=fmt(m.co2yr,0);$('#r-cc').textContent=fmt(m.co2cum/1000,0);$('#r-cr').textContent=fmt(m.credits/1000,0);$('#r-rv').textContent=fmt(m.rev,2);
+  $('#r-mt').textContent=m.matOn?`${m.mat[0]}–${m.mat[1]}`:'0';$('#r-jb').textContent=fmt(m.jobs,0);
+  drawCO2(m);drawRev(m);drawChain(m);
+  const k=cardFor(s.focus,m),key=JSON.stringify(k);
+  if(key!==lastCard){lastCard=key;$('#cardK').textContent=k.k;$('#cardH').textContent=k.h;$('#cardP').textContent=k.p;$('#cardV').innerHTML=k.v;$('#cardS').textContent=k.s;}
+}
+
+/* ================= 8. layout, view offset, quality ================= */
+let W=1,H=1,pr=Math.min(devicePixelRatio||1,1.75),tier=0;const FOV0=32;
+const off={x:0,y:0,tx:0,ty:0,ax:NaN,ay:NaN};
+function measureOffset(){if(!desk()){off.tx=off.ty=0;return;}const r=$('#stage').getBoundingClientRect(),Lr=$('#left').getBoundingClientRect(),Rr=$('#right').getBoundingClientRect(),C=$('#card').getBoundingClientRect();off.tx=((Lr.right+Rr.left)/2-r.left)-W/2;off.ty=(C.top-12-r.top)/2-H/2;}
+function applyOffset(){if(Math.abs(off.x-off.ax)<.3&&Math.abs(off.y-off.ay)<.3)return;off.ax=off.x;off.ay=off.y;const fw=W+2*Math.abs(off.x),fh=H+2*Math.abs(off.y);camera.aspect=fw/fh;camera.fov=2*THREE.MathUtils.radToDeg(Math.atan(Math.tan(THREE.MathUtils.degToRad(FOV0/2))*fh/H));camera.setViewOffset(fw,fh,off.x>0?0:2*Math.abs(off.x),off.y>0?0:2*Math.abs(off.y),W,H);camera.updateProjectionMatrix();}
+function layout(){const r=$('#stage').getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);renderer.setPixelRatio(pr);renderer.setSize(W,H,false);distScale=desk()?1:Math.pow(Math.max(1,1.25/(W/H)),.85);measureOffset();off.x=off.tx;off.y=off.ty;off.ax=NaN;applyOffset();ptsMat.uniforms.uScale.value=H*pr/(2*Math.tan(THREE.MathUtils.degToRad(FOV0/2)));}
+new ResizeObserver(layout).observe($('#stage'));addEventListener('resize',layout);layout();
+let fpsAcc=0,fpsN=0;
+function setTier(t){tier=t;if(t>=1){pr=1;sun.shadow.mapSize.set(1024,1024);sun.shadow.map?.dispose();sun.shadow.map=null;}if(t>=2){renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material&&!Array.isArray(o.material))o.material.needsUpdate=true;});}layout();}
+const cur=$('#cursor'),rip=$('#rip');
+function setCursor(on){cur.style.opacity=on?1:0;}
+function btnCenter(id){const el=document.getElementById(id);if(!el)return null;const r=el.getBoundingClientRect();if(!r.width)return null;return[r.left+Math.min(r.width*.55,24),r.top+r.height*.6];}
+function updateCursor(t){
+  if(!tour.active||!desk()){setCursor(false);return;}
+  const i=beatIndex(t+1.2),b=SCRIPT[i];if(!b.btn){setCursor(false);return;}
+  let prevId=null;for(let k=i-1;k>=0;k--)if(SCRIPT[k].btn){prevId=SCRIPT[k].btn;break;}
+  const to=btnCenter(b.btn);if(!to){setCursor(false);return;}
+  const from=(prevId&&btnCenter(prevId))||[to[0]-140,to[1]-120];const u=ease((t-(b.t-1.2))/.95);
+  const x=lerp(from[0],to[0],u),y=lerp(from[1],to[1],u),press=t>b.t-.18&&t<b.t+.12;
+  cur.style.transform=`translate(${x-4}px,${y-2}px) scale(${press?.86:1})`;setCursor(true);
+  const rt=t-b.t;rip.style.opacity=rt>0&&rt<.6?String(1-rt/.6):'0';rip.style.transform=`scale(${rt>0&&rt<.6?.5+rt*2:.5})`;
+  const el=document.getElementById(b.btn);if(el)el.classList.toggle('press',press);
+}
+
+/* ================= 9. frame ================= */
+const tmpV=V3(0,0,0),leadLine=$('#leadLine'),leadDot=$('#leadDot');
+let panelT=-1,prevFocus='',ndKey='';
+const smooth=(c,t,dt,r=4)=>c+(t-c)*(1-Math.exp(-dt*r));
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.1,(now-last)/1000);last=now;clock+=dt;
+  if(tour.active){tour.t+=dt;if(tour.t>=TOUR_LEN){tour.t-=TOUR_LEN;tour.startPose=curPose();}}
+  else if(about.hidden&&!reduced&&clock-lastInput>25)startTour();
+  const s=stateNow();
+  if(s.focus!==prevFocus){prevFocus=s.focus;syncControls();}
+  yAct=smooth(yAct,s.y,dt,tour.active?20:6);if(Math.abs(yAct-s.y)<.002)yAct=s.y;
+  const m=model(yAct,s.hydro,s.price);
+  updatePlants(yAct,m.s);
+
+  /* drone over the belt planting front */
+  const P=clamp(yAct/D.years,0,1),fx=PLOT.x0+P*(PLOT.x1-PLOT.x0),planting=P>0&&P<1;
+  drone.visible=planting;drone.position.set(fx+2,12+Math.sin(clock*1.3)*.5,Math.sin(clock*.35)*34);drone.children.forEach(c=>{if(c.userData.rot)c.rotation.y+=dt*40;});
+  /* hydrogel section */
+  vis.cut=smooth(vis.cut,s.focus==='hydro'?1:0,dt,3);secPlane.constant=vis.cut<.003?1e4:lerp(SEC.z+SEC.d/2+.2,SEC.z,ease(vis.cut));roots.visible=gel.visible=vis.cut>.01;
+  {const hero=PL.find(p=>p.hero),age=yAct-hero.tau,show=s.hydro&&age>0,sw=1+.25*Math.sin(clock*1.3);
+   gelPos.forEach((g,i)=>{const r=show?g[3]*(1.6+.6*clamp(age,0,1))*sw:0;m4.compose(V3(g[0],g[1],g[2]),qq.identity(),V3(r,r,r));gel.setMatrixAt(i,m4);});gel.instanceMatrix.needsUpdate=true;roots.scale.setScalar(age>0?clamp(.3+age*.5,0,1):.001);}
+  /* road traffic, straw grid installed in year 0.3–0.8 */
+  for(const c of cars){const Lr=ROAD.z1-ROAD.z0,z=ROAD.z0+(((clock*c.v+c.ph)%Lr)+Lr)%Lr;c.g.position.set(ROAD.x+c.dir*2,0,c.dir>0?z:ROAD.z1-(z-ROAD.z0));c.g.rotation.y=c.dir>0?0:Math.PI;}
+  gridM.opacity=clamp((yAct-.3)/.5,0,1)*.95;
+  /* reactive mat: cut the bank on focus; mat appears after 0.5 years */
+  vis.mcut=smooth(vis.mcut,s.focus==='water'?1:0,dt,3);matPlane.constant=vis.mcut<.003?1e4:lerp(CANAL.x+CANAL.w/2+3.5,CANAL.x+.6,ease(vis.mcut));
+  matG.visible=m.matOn;cwM.map.offset.y-=dt*.06;pondM.map.offset.x+=dt*.004;
+  {const a=pol.geometry.attributes,rem=m.matOn?.925:0,Lc=CANAL.z1-CANAL.z0;
+   for(let i=0;i<NPOL;i++){const sd=pSeed[i],z=CANAL.z0+((clock*3+sd[0]*Lc)%Lc),after=z>MAT.z1,inMat=z>=MAT.z0&&z<=MAT.z1;
+     a.position.setXYZ(i,CANAL.x-CANAL.w/2+.5+sd[1]*(CANAL.w-1),inMat?.5:.58-sd[2]*.12,z);a.size.setX(i,.22);a.alpha.setX(i,(after?(1-rem):1)*.85*(inMat?.5:1));}
+   a.position.needsUpdate=a.size.needsUpdate=a.alpha.needsUpdate=true;}
+  /* pasture greens with water; sheep graze */
+  pastM.color.setRGB(lerp(.79,.55,clamp((yAct-.8)/3,0,1)),lerp(.77,.68,clamp((yAct-.8)/3,0,1)),lerp(.6,.4,clamp((yAct-.8)/3,0,1)),THREE.SRGBColorSpace);
+  sheep.forEach((sh,i)=>{const x=sh.x+Math.sin(clock*.05+sh.ph)*5,z=sh.z+Math.cos(clock*.04+sh.ph*1.3)*4;m4.compose(V3(x,.6,z),qq.setFromAxisAngle(V3(0,1,0),sh.ph+clock*.05),V3(1,1,1));sheep.im.setMatrixAt(i,m4);});sheep.im.instanceMatrix.needsUpdate=true;
+  /* rangers */
+  rangers.forEach((r,i)=>{const u=((clock*.004+r.ph)%1+1)%1,p=rCurve.getPointAt(u),q=rCurve.getPointAt((u+.001)%1);r.g.position.copy(p);r.g.rotation.y=Math.atan2(q.x-p.x,q.z-p.z);r.g.visible=yAct>.4;});
+  /* NDVI and satellite */
+  vis.ndvi=smooth(vis.ndvi,s.focus==='carbon'?1:0,dt,3);ndM.opacity=.82*vis.ndvi;if(vis.ndvi>.01&&plantKey!==ndKey){ndKey=plantKey;drawNDVI();}
+  sat.position.set(-120+((clock*8)%160)-80,190,-40);sat.rotation.y=.4;scan.visible=vis.ndvi>.01;scanM.opacity=.1*vis.ndvi;const sh=sat.position.y-.5;scan.scale.set(60,sh,60);scan.position.set(sat.position.x,sh/2,sat.position.z);
+  /* CO2 drifting down into the canopy, dust lifted from bare ground */
+  {const a=co2p.geometry.attributes,show=vis.ndvi*clamp(m.E,0,1);for(let i=0;i<NCO;i++){const sd=cSeed[i],u=((clock*.25+sd[2])%1);a.position.setXYZ(i,sd[0],22-u*20,sd[1]);a.size.setX(i,1.4);a.alpha.setX(i,.5*show*Math.sin(Math.PI*u));}a.position.needsUpdate=a.size.needsUpdate=a.alpha.needsUpdate=true;}
+  {const a=dust.geometry.attributes,T=12,roadE=clamp(grow(yAct-1)*1,0,1),gridE=clamp((yAct-.3)/.5,0,1);
+   for(let i=0;i<ND;i++){const sd=dSeed[i],age=((clock+sd[2]*T)%T),c=coverAt(sd[0],sd[1]),em=clamp(1-c*2.2,0,1),x=sd[0]+7*(1-.5*clamp(c*2,0,1))*age;
+     let al=.16*em*Math.sin(Math.PI*age/T);if(x>GRID.x0)al*=1-.5*gridE;if(x>-16)al*=1-.6*roadE;if(x>ROAD.x+6)al*=.6;
+     a.position.setXYZ(i,x,.4+age*(.35+sd[3]*.6),sd[1]+Math.sin(age*.7+sd[4]*6)*2);a.size.setX(i,1.8+age*.45);a.alpha.setX(i,al);}
+   a.position.needsUpdate=a.size.needsUpdate=a.alpha.needsUpdate=true;}
+
+  /* camera */
+  if(tour.active)applyPose(tourPose(tour.t,tour.startPose));
+  else if(camTween){const u=(clock-camTween.t0)/camTween.dur;applyPose(blendPose(camTween.from,camTween.to,ease(u)));if(u>=1){controls.target.copy(camTween.to.t);camTween=null;controls.enabled=true;controls.update();}}
+  else{controls.update();curTarget.copy(controls.target);}
+  off.x=smooth(off.x,off.tx,dt,5);off.y=smooth(off.y,off.ty,dt,5);applyOffset();
+  renderer.render(scene,camera);
+
+  /* overlays */
+  for(const L of LABELS){let show=L.show.includes(s.focus);
+    if(L.drone){L.v.copy(drone.position);L.v.y+=3;show=show&&drone.visible;}
+    if(L.sat){L.v.copy(sat.position);L.v.y+=5;}
+    if(L.ranger!=null){L.v.copy(rangers[L.ranger].g.position);L.v.y+=2.6;show=show&&rangers[0].g.visible;}
+    if(show){tmpV.copy(L.v).project(camera);show=tmpV.z<1&&Math.abs(tmpV.x)<1.05&&Math.abs(tmpV.y)<1.05;}
+    L.el.style.display=show?'':'none';if(!show)continue;
+    L.el.style.transform=`translate(${(tmpV.x+1)/2*W}px,${(1-tmpV.y)/2*H}px) translate(-50%,-100%)`;}
+  const fa=FOCI[s.focus].anchor;
+  if(fa&&desk()){tmpV.set(...fa).project(camera);const ax=(tmpV.x+1)/2*W,ay=(1-tmpV.y)/2*H;const cr=$('#card').getBoundingClientRect(),sr=$('#stage').getBoundingClientRect();
+    const cx=clamp(ax,cr.left-sr.left+24,cr.right-sr.left-24),cyy=cr.top-sr.top,ok=tmpV.z<1&&ay<cyy-20&&ax>0&&ax<W;
+    leadLine.setAttribute('x1',cx);leadLine.setAttribute('y1',cyy);leadLine.setAttribute('x2',ax);leadLine.setAttribute('y2',ay);leadLine.style.opacity=ok?1:0;leadDot.setAttribute('cx',ax);leadDot.setAttribute('cy',ay);leadDot.style.opacity=ok?1:0;}
+  else{leadLine.style.opacity=0;leadDot.style.opacity=0;}
+  updateCursor(tour.t);
+  if(clock-panelT>.12){panelT=clock;updatePanels(m,s);measureOffset();if(tour.active)syncControls();}
+  if(clock>2){fpsAcc+=dt;fpsN++;if(fpsAcc>3){const fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;if(fps<32&&tier<2&&!window.__td_noTier)setTier(tier+1);}}
+}
+syncControls();
+requestAnimationFrame(t=>{last=t;frame(t);});
+window.__td={seek(t){if(!tour.active)startTour();tour.t=t;},stats:()=>({tier,clock,y:yAct,plants:PL.length,co2:model(yAct,true,10).co2yr})};
+
+/* Golo Lab hand-control hook: lets scenes/hand.js steer this scene */
+window.__golo={THREE,scene,camera,controls,canvas,FOCI,ORDER,setFocus,stopTour,
+  poke(){lastInput=clock;if(camTween){camTween=null;controls.target.copy(curTarget);}if(tour.active)stopTour();controls.enabled=true;},
+  get focus(){return live.focus;}};
+window.dispatchEvent(new Event('golo-ready'));
+</script>
+
+<script src="hand.js"></script>
+</body></html>

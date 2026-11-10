@@ -1,0 +1,1062 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Экомун лаборатория хонаси</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D room with instrument panels at the edges; on phones the stage sits on top and the panels stack below */
+:root{
+  --bg:#e3e9e7; --panel:rgba(248,250,249,.93); --panel-solid:#f8faf9;
+  --ink:#122220; --muted:#526360; --faint:#86938f; --line:#c8d2cf;
+  --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#d3ebe6;
+  --pink:#c2185b; --pink-soft:#f8dbe7; --alarm:#bf3a2b; --ok:#2b7a4b; --ok-soft:#d9eee0; --lock:#9a6b00; --lock-soft:#f7ead0;
+  --sans:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{position:relative;height:100%}
+#stage{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+#gl{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels,#leader{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}
+#leader line{stroke:var(--accent);stroke-width:1.25;stroke-dasharray:3 3}
+#leader circle{fill:var(--accent);stroke:#fff;stroke-width:2}
+.chip{position:absolute;left:0;top:0;white-space:nowrap;font:500 12px/1 var(--sans);color:var(--ink);background:rgba(248,250,249,.92);border:1px solid var(--line);border-radius:6px;padding:4px 7px;will-change:transform}
+.chip b{font:500 11px/1 var(--mono);color:var(--muted);margin-left:5px;font-variant-numeric:tabular-nums}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.chip.lock{background:var(--lock-soft);border-color:#e2c27a}
+#tip{position:absolute;left:0;top:0;pointer-events:none;max-width:260px;background:var(--panel-solid);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12.5px;line-height:1.35;box-shadow:0 6px 18px rgba(18,34,32,.16);z-index:5}
+#tip b{display:block;font-weight:600}
+#tip span{color:var(--muted)}
+#nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+#ui{position:absolute;inset:0;pointer-events:none;display:grid;grid-template-columns:minmax(240px,272px) minmax(0,1fr) minmax(264px,300px);grid-template-rows:auto minmax(0,1fr) auto;gap:12px;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#ui>*{pointer-events:auto;min-width:0}
+#head{grid-column:1/3;grid-row:1;pointer-events:none;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+#head .tour{pointer-events:auto}
+#head .eyebrow,#head h1,#head .sub{text-shadow:0 0 6px var(--bg),0 0 12px var(--bg),0 0 2px var(--bg)}
+.eyebrow{font:500 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font:700 30px/1.1 var(--sans);letter-spacing:-.015em;text-wrap:balance}
+.sub{margin:0;color:var(--muted);font-size:14px}
+.tour{display:flex;align-items:center;gap:8px;margin-top:8px;font:500 12px/1 var(--sans);color:var(--muted)}
+.tour .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tour.live .dot{background:var(--faint);box-shadow:0 0 0 3px #e3e8e6}
+.btn{font:500 12.5px/1 var(--sans);color:var(--ink);background:var(--panel-solid);border:1px solid var(--line);border-radius:7px;padding:7px 10px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#left{grid-column:1;grid-row:2;align-self:start;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
+#right{grid-column:3;grid-row:1/3;align-self:start;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:6px}
+#card{grid-column:2;grid-row:2;align-self:end;justify-self:center;width:100%;max-width:470px}
+#dock{grid-column:1/4;grid-row:3;display:flex;justify-content:center;min-width:0}
+.ph{margin:0;font:600 12px/1.3 var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--ink);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ph .u{font:400 11px/1 var(--mono);text-transform:none;letter-spacing:0;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.frow{display:flex;align-items:baseline;gap:6px}
+.frow label,.flabel{font-size:13px;color:var(--muted);flex:1}
+.frow output{font:500 20px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.u{font:400 11.5px/1 var(--mono);color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.ticks{display:flex;justify-content:space-between;font:400 10.5px/1 var(--mono);color:var(--faint)}
+.steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.steps button,.seg button{font:500 12.5px/1 var(--sans);padding:8px 0;border:1px solid var(--line);background:var(--panel-solid);border-radius:7px;cursor:pointer;color:var(--ink)}
+.steps button:hover{border-color:var(--accent);color:var(--accent)}
+.seg{display:flex;gap:4px}
+.seg button{flex:1}
+.seg button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.press{transform:scale(.94)}
+.ro{display:grid;grid-template-columns:1fr auto;gap:6px 10px;margin:0;padding-top:10px;border-top:1px solid var(--line)}
+.ro dt{color:var(--muted);font-size:12.5px}
+.ro dd{margin:0;text-align:right;font:400 11.5px/1.3 var(--mono);color:var(--muted);white-space:nowrap}
+.ro dd b{font:500 13.5px/1.3 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font:500 10.5px/1 var(--sans);padding:3px 7px;border-radius:20px;vertical-align:1px}
+.pill.clear{background:#e8eef0;color:var(--muted)}
+.pill.pink{background:var(--pink-soft);color:var(--pink)}
+.pill.eq{background:var(--ok-soft);color:var(--ok)}
+
+svg.chart{width:100%;height:auto;display:block;font-family:var(--mono)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--faint);font-size:9.5px}
+.chart .xl{fill:var(--muted);font-size:9.5px;font-family:var(--sans)}
+.chart .val{fill:var(--ink);font-size:10.5px;font-weight:500}
+.chart .curve{fill:none;stroke:var(--accent);stroke-width:2}
+.chart .done{fill:none;stroke:var(--accent);stroke-width:3.2}
+.chart .ghost{fill:none;stroke:var(--accent);stroke-width:1.3;opacity:.3}
+.chart .eqv{stroke:var(--pink);stroke-width:1.2;stroke-dasharray:4 3}
+.chart .eql{fill:var(--pink);font-size:9.5px}
+.chart .mk{fill:var(--panel-solid);stroke:var(--ink);stroke-width:2}
+.inv{display:grid;gap:3px;margin:2px 0 0;padding:0;list-style:none}
+.inv li{display:grid;grid-template-columns:minmax(0,1fr) 92px 26px;gap:8px;align-items:center;font-size:12px}
+.inv li span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv .bar{height:7px;border-radius:4px;background:#dfe6e4;overflow:hidden;display:flex}
+.inv .bar i{display:block;height:100%;background:var(--accent)}
+.inv .bar i.u{background:#e2b13a}
+.inv b{font:500 11.5px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:4px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px;background:var(--accent)}
+.legend i.u{background:#e2b13a}
+.linkbtn{margin-top:8px;align-self:flex-start}
+
+.ck{font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+#card h3{margin:3px 0 4px;font:600 17px/1.25 var(--sans);text-wrap:balance}
+#card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+#card p.sf{margin-top:6px;color:var(--ink);font-size:12.5px}
+#card p.sf::before{content:"Хавфсизлик: ";font-weight:600;color:var(--alarm)}
+.cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px 14px;margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+.cv div{min-width:0}
+.cv dt{font-size:11.5px;color:var(--muted)}
+.cv dd{margin:1px 0 0;font:500 15px/1.2 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cv dd small{font:400 11px var(--mono);color:var(--muted);margin-left:3px}
+.cv dd.pink{color:var(--pink)}
+#cardX:not(:empty){margin-top:10px}
+
+.dockbar{display:flex;gap:2px;padding:5px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto;max-width:100%;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);scrollbar-width:thin}
+.fbtn{flex:none;font:500 13px/1 var(--sans);padding:9px 12px;border-radius:8px;border:0;background:transparent;color:var(--ink);cursor:pointer;transition:background .2s,color .2s}
+.fbtn:hover{background:var(--accent-soft)}
+.fbtn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.fbtn .k{font:400 10px/1 var(--mono);opacity:.55;margin-right:5px}
+
+#cursor{position:fixed;left:0;top:0;width:26px;height:26px;pointer-events:none;z-index:60;opacity:0;transition:opacity .3s;will-change:transform}
+#cursor svg{width:26px;height:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+#cursor .rip{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;border:2px solid var(--accent);opacity:0}
+
+#about{position:fixed;z-index:70;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,calc(100vw - 32px));max-height:min(84vh,820px);overflow:auto;background:var(--panel-solid);box-shadow:0 18px 50px rgba(18,34,32,.22)}
+#about .ahead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+#about h2{margin:0;font:600 20px/1.2 var(--sans)}
+#about h3{margin:14px 0 6px;font:600 14px/1.3 var(--sans)}
+#about ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13.5px}
+#about p{color:var(--muted);font-size:13px;margin:6px 0;max-width:70ch}
+#scrim{position:fixed;inset:0;z-index:65;background:rgba(18,34,32,.28)}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  #app{height:auto;display:flex;flex-direction:column}
+  #stage{position:relative;order:1;height:58vh;min-height:320px}
+  #ui{display:contents}
+  #ui>*{margin-left:max(16px,env(safe-area-inset-left,0px));margin-right:max(16px,env(safe-area-inset-right,0px))}
+  #head{order:0;pointer-events:auto;padding-block:14px 10px}
+  h1{font-size:25px}
+  #dock{order:2;margin-top:10px;justify-content:flex-start}
+  #card{order:3;margin-top:10px;max-width:none;width:auto;align-self:stretch}
+  #left{order:4;margin-top:10px;max-height:none}
+  #right{order:5;margin-top:10px;margin-bottom:24px;max-height:none}
+  #leader,#cursor,#tip{display:none}
+  .chip{font-size:11px;padding:3px 6px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="app">
+  <div id="stage">
+    <canvas id="gl" tabindex="0" aria-label="Экомун лаборатория хонасининг 3D модели. Сичқонча билан айлантиринг, ғилдирак билан яқинлаштиринг."></canvas>
+    <svg id="leader" aria-hidden="true"><line id="leadLine" x1="0" y1="0" x2="0" y2="0"/><circle id="leadDot" r="4.5" cx="-20" cy="-20"/></svg>
+    <div id="labels" aria-hidden="true"></div>
+    <div id="tip" hidden></div>
+    <div id="nogl" hidden>Бу қурилмада WebGL ишламаяпти, шунинг учун 3D хона кўринмайди.</div>
+  </div>
+
+  <div id="ui">
+    <header id="head">
+      <div class="eyebrow">Экомун · виртуал кимё хонаси</div>
+      <h1>Лаборатория хонаси</h1>
+      <p class="sub" id="subline">Жавонда 196 модда, хонада 157 асбоб</p>
+      <div class="tour" id="tourBox"><span class="dot"></span><span id="tourTxt">Авто тур</span><button type="button" class="btn" id="tourBtn">Тўхтатиш</button></div>
+    </header>
+
+    <section id="left" class="panel" aria-label="Титрлаш">
+      <h2 class="ph"><span>Титрлаш</span><span class="u">HCl ← NaOH 0,1 М</span></h2>
+      <div class="field">
+        <div class="frow"><label for="vb">Бюреткадан NaOH</label><output id="vOut" for="vb">0,00</output><span class="u">мл</span></div>
+        <input type="range" id="vb" min="0" max="30" step="0.05" value="0">
+        <div class="ticks"><span>0</span><span>20 эквивалент</span><span>30 мл</span></div>
+      </div>
+      <div class="steps" role="group" aria-label="NaOH қўшиш">
+        <button type="button" id="drop">+1 томчи</button><button type="button" id="ml1">+1 мл</button><button type="button" id="reset">Янгидан</button>
+      </div>
+      <div class="field">
+        <div class="flabel" id="stL">Профилдаги босқич</div>
+        <div class="seg" role="group" aria-labelledby="stL"><button type="button" id="st-m" aria-pressed="false">Мактаб</button><button type="button" id="st-u" aria-pressed="true">Университет</button></div>
+      </div>
+      <dl class="ro">
+        <dt>pH</dt><dd><b id="r-ph">—</b></dd>
+        <dt>Ҳарорат</dt><dd><b id="r-t">—</b> °C</dd>
+        <dt>Ўтказувчанлик</dt><dd><b id="r-ec">—</b> мкСм/см</dd>
+        <dt>Колбада HCl</dt><dd><b>2,00</b> ммоль</dd>
+        <dt>Қўшилган NaOH</dt><dd><b id="r-n">—</b> ммоль</dd>
+        <dt>Ранг</dt><dd><span class="pill clear" id="r-col">рангсиз</span></dd>
+      </dl>
+    </section>
+
+    <section id="right" class="panel" aria-label="Жонли графиклар">
+      <h2 class="ph"><span>Титрлаш эгри чизиғи</span><span class="u">pH</span></h2>
+      <svg id="chPH" class="chart" viewBox="0 0 300 160" role="img" aria-label="pH ва қўшилган NaOH ҳажми"></svg>
+      <h2 class="ph"><span>Ўтказувчанлик</span><span class="u">мСм/см</span></h2>
+      <svg id="chEC" class="chart" viewBox="0 0 300 120" role="img" aria-label="Электр ўтказувчанлик ва қўшилган NaOH ҳажми"></svg>
+      <h2 class="ph"><span>Хона таркиби</span><span class="u" id="invU">дона</span></h2>
+      <ul class="inv" id="inv"></ul>
+      <div class="legend"><span><i></i>мактаб ва университет</span><span><i class="u"></i>фақат университет</span></div>
+      <button type="button" class="btn linkbtn" id="aboutBtn">Бу саҳифа ҳақида</button>
+    </section>
+
+    <section id="card" class="panel" aria-live="polite">
+      <div class="ck" id="cardK"></div>
+      <h3 id="cardH"></h3>
+      <p id="cardP"></p>
+      <p class="sf" id="cardS" hidden></p>
+      <div id="cardX"></div>
+      <dl id="cardV" class="cv"></dl>
+    </section>
+
+    <nav id="dock" aria-label="Хона қисмлари"><div class="dockbar" id="dockbar"></div></nav>
+  </div>
+</div>
+
+<div id="cursor" aria-hidden="true"><svg viewBox="0 0 26 26"><path d="M4 2l16 11-7 1.4 4.2 8.2-3 1.5-4.2-8.2L4 21z" fill="#122220" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg><div class="rip" id="rip"></div></div>
+
+<div id="scrim" hidden></div>
+<section id="about" class="panel" hidden role="dialog" aria-modal="true" aria-labelledby="aboutH">
+  <div class="ahead"><h2 id="aboutH">Бу саҳифа ҳақида</h2><button type="button" class="btn" id="aboutClose">Ёпиш</button></div>
+  <p>Хона Экомун платформасидаги «Лаборатория хонаси» бўлимининг 3D сахнаси асосида қурилган. Жиҳозларнинг жойлашуви, жавондаги 196 та модданинг ранги, гуруҳи ва босқичи, асбобларнинг номи ва тавсифлари платформа кодидан олинган (vendor/eko-labxona.js).</p>
+  <h3>Титрлаш қандай ҳисобланади</h3>
+  <ul>
+    <li>Тажриба платформадаги «Кислота–асос титрлаш» рецепти: колбада 20 мл HCl 0,1 М ва 0,05 мл фенолфталеин, бюреткада NaOH 0,1 М.</li>
+    <li>pH, ранг ва ўтказувчанлик платформанинг ўз кимё ядросида (eko-labxona-kimyo.js) ҳисобланади: заряд мувозанати, Кольрауш қонуни, фенолфталеин pH 8,2 дан юқорида.</li>
+    <li>Ҳарорат платформадаги қоида бўйича: нейтраллаш иссиқлиги 55,8 кЖ/моль, эритманинг иссиқлик сиғими 4,18 Ж/(г·°C).</li>
+  </ul>
+  <h3>Нима соддалаштирилган</h3>
+  <ul>
+    <li>Колба (250 мл), бюретка (50 мл, 0,05 мл томчи) ва штатив ҳақиқий ўлчамда. Бошқа асбоблар платформадаги каби содда шаклларда.</li>
+    <li>Тортиш шкафидаги ҳаво оқими сифат жиҳатдан кўрсатилган; тезлиги ўлчанмаган. Ойна 40 см дан баланд эмас (платформа қоидаси).</li>
+    <li>Мактаб босқичида университетга оид моддалар кулранг ва қулфланган кўринади, худди платформадагидек.</li>
+  </ul>
+</section>
+
+<script>
+/* Экомун — 🧪 «Лаборатория хонаси»: кимёвий ҳисоблаш ядроси (UI'сиз, Node'да ҳам синалади).
+   Модель: сувли эритма, 25 °C. pH заряд мувозанати (электронейтраллик) тенгламасидан топилади:
+     Σ(кучли катионлар) + [H⁺] + [NH₄⁺] = Σ(кучли анионлар) + Kw/[H⁺] + Σ(кучсиз кислота анионлари) + 2·[MY²⁻].
+   Кучли кислота (HCl, H₂SO₄) — жуфтсиз анион, кучли асос (NaOH, Ca(OH)₂) — жуфтсиз катион
+   сифатида ҳисобланади. Кучсиз тизимлар: сирка (pKa 4,76), лимон (3,13; 4,76; 6,40),
+   карбонат (6,35; 10,33), аскорбин (4,10), совун/стеарин (≈ 8,5), Fe³⁺ гидролизи (2,2),
+   аммоний (9,25), фосфат (2,15; 7,20; 12,35), сульфит (1,86; 7,17), ЭДТА (2,0; 2,67; 6,16; 10,26).
+   ЭДТА комплекслари: lg K(CaY²⁻) = 10,69, lg K(MgY²⁻) = 8,79 (шартли доимий α(Y⁴⁻) орқали).
+   Икки зарядли ионлар учун Дэвис активлик тузатмаси (CaCO₃, Mg(OH)₂, Mn(OH)₂); Al³⁺ гидролизи pKa 4,97.
+   Чўкмалар эрувчанлик кўпайтмаси (Ksp) бўйича: AgCl 1,8·10⁻¹⁰, Ag₂CrO₄ 1,1·10⁻¹², BaSO₄ 1,1·10⁻¹⁰,
+   CaCO₃ 3,3·10⁻⁹, Cu(OH)₂ 2,2·10⁻²⁰, Fe(OH)₃ 2,8·10⁻³⁹, Mg(OH)₂ 5,6·10⁻¹², Mn(OH)₂ 1,9·10⁻¹³
+   (CRC Handbook, 25 °C; Harris, «Quantitative Chemical Analysis»). CO₂ эрувчанлиги ≈ 0,034 моль/л
+   (Генри қонуни, 1 атм). Нейтраллаш иссиқлиги 55,8 кЖ/моль; сода + сирка эндотермик (≈ +18 кЖ/моль CO₂).
+   Электр ўтказувчанлик — Кольрауш қонуни (чексиз суюлтиришдаги моляр ўтказувчанликлар, 25 °C)
+   ва ион кучига оддий тузатма. Ютилиш спектри — Бугер–Ламберт–Бер қонуни (1 см кювета),
+   хромофорларнинг максимум тўлқин узунлиги ва моляр ютилиш коэффициенти адабиётдан тахминий.
+   Эритиб олинган кислород — Benson–Krause яқинлашуви (тоза сув, 1 атм).
+   Бу ўқув модели: активлик коэффициентлари ва бошқа комплекслар соддалаштирилган. */
+(() => {
+  "use strict";
+  const KW = 1e-14;
+  const pK = { ac: [4.76], cit: [3.13, 4.76, 6.40], c: [6.35, 10.33], vc: [4.10], soap: [8.5], fe: [2.2], al: [4.97], nh: [9.25], p: [2.15, 7.20, 12.35], so3: [1.86, 7.17], y: [2.0, 2.67, 6.16, 10.26] };
+  const KSP = { agcl: 1.8e-10, ag2cro4: 1.1e-12, baso4: 1.1e-10, caco3: 3.3e-9, cuoh: 2.2e-20, feoh: 2.8e-39, mgoh: 5.61e-12, mnoh: 1.9e-13, aloh: 1.3e-33 };
+  const KF = { cay: Math.pow(10, 10.69), mgy: Math.pow(10, 8.79) };
+  const CO2SAT = 0.034;
+  /* Табиий сувлар CaCO₃ га нисбатан метастабил ўта тўйинган бўлади (SI ≈ 0,5–0,8) — чўкма фақат SI > 0,7 да */
+  const CC_META = 0.7;
+  /* Кўп негизли кислота: ҳар бир шаклнинг улуши α (0 — тўлиқ протонланган) */
+  function alphas(pks, h) {
+    const K = pks.map((p) => Math.pow(10, -p));
+    const terms = [1];
+    for (let i = 0; i < K.length; i++) terms.push(terms[i] * K[i] / h);
+    const s = terms.reduce((a, b) => a + b, 0);
+    return terms.map((x) => x / s);
+  }
+  /* Ўртача манфий заряд (бир молга) */
+  const negCharge = (pks, h) => alphas(pks, h).reduce((a, x, i) => a + x * i, 0);
+
+  /* Эритмадаги эриган ионлар (моль/л) бўйича pH */
+  function solveH(c) {
+    const cat = (c.Na || 0) + (c.K || 0) + 2 * (c.Ca || 0) + 2 * (c.Mg || 0) + 2 * (c.Cu || 0) + (c.Ag || 0) + 2 * (c.Ba || 0) + 3 * (c.Fe || 0) + 3 * (c.Al || 0) + 2 * (c.Mn2 || 0);
+    const an = (c.Cl || 0) + 2 * (c.SO4 || 0) + (c.NO3 || 0) + (c.NO2 || 0) + (c.SCN || 0) + (c.Mn || 0) + (c.I || 0) + (c.A || 0)
+      + 2 * (c.CrO4 || 0) + 2 * (c.S2O3 || 0) + 2 * (c.S4O6 || 0) + 2 * (c.CaY || 0) + 2 * (c.MgY || 0);
+    const f = (h) => cat + h - an - KW / h
+      + (c.NH || 0) * (1 - negCharge(pK.nh, h))
+      - (c.Ac || 0) * negCharge(pK.ac, h) - (c.Cit || 0) * negCharge(pK.cit, h)
+      - (c.C || 0) * negCharge(pK.c, h) - (c.Vc || 0) * negCharge(pK.vc, h)
+      - (c.Soap || 0) * negCharge(pK.soap, h) - (c.Fe || 0) * negCharge(pK.fe, h) - (c.Al || 0) * negCharge(pK.al, h)
+      - (c.P || 0) * negCharge(pK.p, h) - (c.SO3 || 0) * negCharge(pK.so3, h)
+      - (c.Y || 0) * negCharge(pK.y, h);
+    let lo = -15.5, hi = 1.5;
+    for (let i = 0; i < 70; i++) {
+      const mid = (lo + hi) / 2;
+      if (f(Math.pow(10, mid)) > 0) hi = mid; else lo = mid;
+    }
+    return Math.pow(10, (lo + hi) / 2);
+  }
+
+  /* Иккита ионнинг оддий чўкмаси (pH га боғлиқ эмас): a·b ≤ Ksp */
+  function pairPpt(a, b, ksp) {
+    if (a * b <= ksp) return 0;
+    /* (a − x)(b − x) = Ksp → x = ((a + b) − √((a − b)² + 4Ksp)) / 2 */
+    return ((a + b) - Math.sqrt((a - b) * (a - b) + 4 * ksp)) / 2;
+  }
+  /* 1:1 комплекс: (M − x)(L − x)·K' = x */
+  function bind(M, Lg, Kc) {
+    if (M <= 0 || Lg <= 0 || Kc <= 0) return 0;
+    const b = M + Lg + 1 / Kc;
+    return (b - Math.sqrt(Math.max(0, b * b - 4 * M * Lg))) / 2;
+  }
+
+  /* Тўлиқ мувозанат: умумий миқдорлар (ммоль) ва ҳажм (мл) → эриган ионлар, чўкмалар, pH.
+     Чўкмалар ҳар сафар умумий миқдордан қайта ҳисобланади (кислота қўшилса эрийди). */
+  function equil(tot, Vml) {
+    const V = Math.max(Vml, 0.001) / 1000; // л
+    const c = {};
+    for (const k in tot) c[k] = (tot[k] || 0) / 1000 / V; // моль/л
+    const ppt = { agcl: 0, ag2cro4: 0, baso4: 0, caco3: 0, cuoh: 0, feoh: 0, casoap: 0, mgoh: 0, mnoh: 0, aloh: 0 };
+    /* Ион кучи ва Дэвис тенгламаси: икки зарядли ионлар активлиги (табиий сувларда CaCO₃ ўта тўйинмасин) */
+    let I = 0;
+    const zz = { Na: 1, K: 1, Ca: 4, Mg: 4, Cu: 4, Fe: 9, Al: 9, Ag: 1, Ba: 4, Mn2: 4, Cl: 1, SO4: 4, NO3: 1, NO2: 1, SCN: 1, I: 1, A: 1, CrO4: 4, S2O3: 4, C: 1, NH: 1, Ac: 1, P: 1 };
+    for (const k in zz) I += 0.5 * (c[k] || 0) * zz[k];
+    I = Math.min(I, 0.7);
+    const sI = Math.sqrt(I), lg1 = -0.51 * (sI / (1 + sI) - 0.3 * I), g1 = Math.pow(10, lg1), g2 = Math.pow(10, 4 * lg1);
+    /* AgCl, кейин қолган Ag⁺ хромат билан (Мор усули: AgCl тўлиқ чўккандан кейин қизил-қўнғир Ag₂CrO₄) */
+    let x = pairPpt(c.Ag || 0, c.Cl || 0, KSP.agcl); c.Ag = (c.Ag || 0) - x; c.Cl = (c.Cl || 0) - x; ppt.agcl = x;
+    if ((c.Ag || 0) > 0 && (c.CrO4 || 0) > 0 && c.Ag * c.Ag * c.CrO4 > KSP.ag2cro4) {
+      let lo = 0, hi = Math.min(c.Ag / 2, c.CrO4);
+      for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; const a = c.Ag - 2 * m; if (a * a * (c.CrO4 - m) > KSP.ag2cro4) lo = m; else hi = m; }
+      c.Ag -= 2 * hi; c.CrO4 -= hi; ppt.ag2cro4 = hi;
+    }
+    x = pairPpt(c.Ba || 0, c.SO4 || 0, KSP.baso4); c.Ba = (c.Ba || 0) - x; c.SO4 = (c.SO4 || 0) - x; ppt.baso4 = x;
+    /* Кальций совун (кальций стеарати) — амалда эримайди: Ca²⁺ + 2 St⁻ → Ca(St)₂↓ */
+    if ((c.Soap || 0) > 0 && (c.Ca || 0) > 0) { const y = Math.min(c.Ca, c.Soap / 2); c.Ca -= y; c.Soap -= 2 * y; ppt.casoap = y; }
+    /* ЭДТА: аввал Ca²⁺ (кучлироқ), кейин Mg²⁺ билан боғланади; шартли доимий pH га боғлиқ */
+    if ((c.Y || 0) > 0 && ((c.Ca || 0) > 0 || (c.Mg || 0) > 0)) {
+      const Y0 = c.Y, Ca0 = c.Ca || 0, Mg0 = c.Mg || 0;
+      for (let it = 0; it < 3; it++) {
+        const a4 = alphas(pK.y, solveH(c))[4];
+        const xc = bind(Ca0, Y0, KF.cay * a4), xm = bind(Mg0, Y0 - xc, KF.mgy * a4);
+        c.Ca = Ca0 - xc; c.Mg = Mg0 - xm; c.CaY = xc; c.MgY = xm; c.Y = Y0 - xc - xm;
+      }
+    }
+    /* pH га боғлиқ чўкмалар: эриган улушни бисекция билан топамиз */
+    const fit = (key, tk, check) => {
+      const T0 = c[tk] || 0; if (T0 <= 0) return;
+      if (check(T0, solveH(c)) <= 0) return;
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 40; i++) {
+        const m = (lo + hi) / 2; c[tk] = T0 * m;
+        if (check(T0 * m, solveH(c)) > 0) hi = m; else lo = m;
+      }
+      c[tk] = T0 * lo; ppt[key] += T0 * (1 - lo);
+    };
+    const lg = (v) => Math.log10(Math.max(v, 1e-300));
+    for (let it = 0; it < 3; it++) {
+      fit("feoh", "Fe", (fe, h) => lg(fe * alphas(pK.fe, h)[0]) + 3 * lg(KW / h) - lg(KSP.feoh));
+      fit("cuoh", "Cu", (cu, h) => lg(cu) + 2 * lg(KW / h) - lg(KSP.cuoh));
+      fit("mgoh", "Mg", (mg, h) => lg(mg * g2) + 2 * lg(KW / h) - lg(KSP.mgoh));
+      fit("aloh", "Al", (al, h) => lg(al * alphas(pK.al, h)[0]) + 3 * lg(KW / h) - lg(KSP.aloh));
+      fit("mnoh", "Mn2", (mn, h) => lg(mn * g2) + 2 * lg(KW / h) - lg(KSP.mnoh));
+      /* CaCO₃: Ca ва C бир хил миқдорда чўкади — Ca ни бисекция қиламиз, C ни мос камайтирамиз */
+      const Ca0 = c.Ca || 0, C0 = c.C || 0;
+      if (Ca0 > 0 && C0 > 0) {
+        const chk = (m) => { c.Ca = Ca0 - m; c.C = C0 - m; const h = solveH(c); return lg(c.Ca * g2) + lg(c.C * alphas(pK.c, h)[2] * g2) - lg(KSP.caco3) - CC_META; };
+        if (chk(0) > 0) {
+          let lo = 0, hi = Math.min(Ca0, C0);
+          for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (chk(m) > 0) lo = m; else hi = m; }
+          c.Ca = Ca0 - hi; c.C = C0 - hi; ppt.caco3 += hi;
+        } else { c.Ca = Ca0; c.C = C0; }
+      }
+    }
+    const h = solveH(c);
+    const out = { c, h, pH: -Math.log10(h), ppt: {}, I };
+    for (const k in ppt) out.ppt[k] = ppt[k] * V * 1000; // ммоль
+    out.co2aq = (c.C || 0) * alphas(pK.c, h)[0]; // моль/л H₂CO₃*
+    /* ЭДТА билан боғланмаган металл (эритмада + чўкмада) — металлоиндикатор ранги учун, моль/л */
+    out.freeCa = (c.Ca || 0) + ppt.caco3 + ppt.casoap;
+    out.freeM = out.freeCa + (c.Mg || 0) + ppt.mgoh;
+    return out;
+  }
+
+  /* ---------- Электр ўтказувчанлик (Кольрауш) ----------
+     λ° (См·см²/моль, 25 °C, бир мол ионга): H⁺ 349,8; OH⁻ 198,6; Na⁺ 50,1; K⁺ 73,5; Ca²⁺ 119,0; Mg²⁺ 106,0;
+     Cl⁻ 76,3; NO₃⁻ 71,4; SO₄²⁻ 160,0; HCO₃⁻ 44,5; CO₃²⁻ 138,6; CH₃COO⁻ 40,9; NH₄⁺ 73,5; Cu²⁺ 107,2;
+     Fe³⁺ 204; Ag⁺ 61,9; Ba²⁺ 127,2; I⁻ 76,8; H₂PO₄⁻ 36; HPO₄²⁻ 114 (CRC Handbook). */
+  const LAM = { Na: 50.1, K: 73.5, Ca: 119.0, Mg: 106.0, Al: 183, Cu: 107.2, Fe: 204, Ag: 61.9, Ba: 127.2, Mn2: 107, Cl: 76.3, NO3: 71.4, NO2: 71.8, SO4: 160.0, SCN: 66, I: 76.8, Mn: 61.3, A: 70, CrO4: 170, S2O3: 170, S4O6: 110, CaY: 90, MgY: 90 };
+  function conductivity(eq) {
+    const c = eq.c, h = eq.h;
+    let s = 349.8 * h + 198.6 * KW / h, I = 0;
+    const z = { Na: 1, K: 1, Ca: 2, Mg: 2, Al: 3, Cu: 2, Fe: 3, Ag: 1, Ba: 2, Mn2: 2, Cl: 1, NO3: 1, NO2: 1, SO4: 2, SCN: 1, I: 1, Mn: 1, A: 1, CrO4: 2, S2O3: 2, S4O6: 2, CaY: 2, MgY: 2 };
+    for (const k in LAM) { const v = Math.max(0, c[k] || 0); s += LAM[k] * v; I += 0.5 * v * z[k] * z[k]; }
+    const ac = c.C || 0, ca = alphas(pK.c, h); s += ac * (44.5 * ca[1] + 138.6 * ca[2]); I += 0.5 * ac * (ca[1] + 4 * ca[2]);
+    const nh = (c.NH || 0) * (1 - negCharge(pK.nh, h)); s += 73.5 * nh; I += 0.5 * nh;
+    const pa = alphas(pK.p, h), P = c.P || 0; s += P * (36 * pa[1] + 114 * pa[2] + 207 * pa[3]); I += 0.5 * P * (pa[1] + 4 * pa[2] + 9 * pa[3]);
+    const aa = (c.Ac || 0) * alphas(pK.ac, h)[1]; s += 40.9 * aa; I += 0.5 * aa;
+    const cit = (c.Cit || 0) * negCharge(pK.cit, h); s += 60 * cit; I += 0.5 * cit * 2;
+    I += 0.5 * (h + KW / h);
+    /* См·см²/моль × моль/л → мкСм/см: ×1000; ион кучи тузатмаси 1/(1+0,6√I) (0,01 М KCl → ≈ 1410 мкСм/см) */
+    return Math.max(0.05, 1000 * s / (1 + 0.6 * Math.sqrt(I)) + 0.055);
+  }
+
+  /* ---------- Хромофорлар (моль/л) ва спектр ---------- */
+  function chromo(st, eq) {
+    const c = eq.c, ex = st.extra || {}, V = Math.max(st.V, 1e-3) / 1000, ind = st.ind || {};
+    const o = {};
+    const fe = c.Fe || 0, scn = c.SCN || 0;
+    if (fe > 0 && scn > 0) o.fescn = fe * (140 * scn / (1 + 140 * scn)); // [Fe(SCN)]²⁺, K ≈ 140
+    if (fe > 0) o.fe3 = fe - (o.fescn || 0);
+    if ((c.Mn || 0) > 0) o.mno4 = c.Mn;
+    if ((c.Cu || 0) > 0) o.cu = c.Cu;
+    if ((c.CrO4 || 0) > 0) o.cro4 = c.CrO4;
+    const i2 = (ex.I2 || 0) / 1000 / V;
+    if (i2 > 0) { if ((ex.starch || 0) > 0 && st.T < 60) o.i2s = i2; else o.i2 = i2; }
+    /* Молибден кўки: 12 Mo + PO₄³⁻ → гетерополикислота, аскорбин кислота билан қайтарилади */
+    if ((ex.moly || 0) > 0 && (c.P || 0) > 0) o.moblue = Math.min(c.P, ex.moly / 12 / 1000 / V);
+    /* Несслер: 2[HgI₄]²⁻ + NH₃ + 3OH⁻ → сариқ-қўнғир коллоид (ишқорий муҳитда) */
+    if ((ex.ness || 0) > 0 && (c.NH || 0) > 0 && eq.pH > 11) o.ness = Math.min(c.NH, ex.ness / 2 / 1000 / V);
+    if ((ex.azo || 0) > 0) o.azo = ex.azo / 1000 / V;
+    if ((ex.dpa || 0) > 0 && (c.NO3 || 0) + (c.NO2 || 0) > 2e-5) o.dpa = Math.min(1e-3, (c.NO3 || 0) + (c.NO2 || 0));
+    if ((ex.cr6 || 0) > 0) o.cr6 = ex.cr6 / 1000 / V;
+    if ((ex.cr3 || 0) > 0) o.cr3 = ex.cr3 / 1000 / V;
+    if ((ex.mnooh || 0) > 0) o.mnooh = ex.mnooh / 1000 / V;
+    /* Металлоиндикаторлар (pH 8–11): металл билан — вино-қизил, эркин — кўк */
+    if ((ind.ebt || 0) > 0) { const e = (ind.ebt / 1000 / V) * 2e-3; if (eq.pH > 6.3 && eq.pH < 11.6) o[eq.freeM > 2e-6 ? "ebtM" : "ebtF"] = e; else o.ebtM = e; }
+    if ((ind.mur || 0) > 0) { const e = (ind.mur / 1000 / V) * 2e-3; o[eq.freeCa > 2e-6 ? "murM" : "murF"] = e; }
+    return o;
+  }
+  /* Ютилиш тасмалари: [λmax, кенглик, ε (л/(моль·см))] */
+  const BANDS = {
+    fescn: [[480, 55, 4700]], fe3: [[340, 45, 3000]], mno4: [[525, 40, 2455], [545, 25, 2000]], cu: [[810, 140, 12]], cro4: [[372, 40, 4800]],
+    i2s: [[615, 95, 35000]], i2: [[353, 35, 26400], [460, 55, 900]], moblue: [[880, 160, 20000], [710, 90, 9000]], ness: [[410, 70, 6000]],
+    azo: [[540, 45, 45000]], dpa: [[590, 80, 10000]], cr6: [[350, 40, 3000], [440, 50, 370]], cr3: [[590, 60, 14], [410, 50, 15]],
+    mnooh: [[450, 200, 1500]], ebtM: [[530, 60, 22000]], ebtF: [[615, 60, 9000]], murM: [[506, 60, 15000]], murF: [[540, 60, 9000]]
+  };
+  function absorb(st, eq, lam) {
+    const o = chromo(st, eq);
+    let A = 0;
+    for (const k in o) for (const [l0, w, e] of BANDS[k] || []) A += e * o[k] * Math.exp(-Math.pow((lam - l0) / w, 2));
+    const col = color(st, eq);
+    A += col.tur * 1.6 * Math.pow(550 / lam, 1.5); // лойқалик ёруғликни сочади
+    return Math.max(0, A);
+  }
+
+  /* ---------- Эриган кислород ----------
+     Тўйиниш (мг/л, 1 атм, тоза сув): 14,62 − 0,3898·T + 0,006969·T² − 5,897·10⁻⁵·T³ */
+  const doSat = (T) => 14.62 - 0.3898 * T + 0.006969 * T * T - 0.00005897 * T * T * T;
+
+  /* Ранг: RGB 0..1 ва лойқалик (0..1) */
+  const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  function cabbage(pH) {
+    const st = [[1, [0.86, 0.1, 0.24]], [3, [0.93, 0.25, 0.45]], [5, [0.74, 0.25, 0.6]], [7, [0.45, 0.28, 0.66]], [8, [0.23, 0.38, 0.8]], [10, [0.15, 0.62, 0.45]], [12, [0.62, 0.78, 0.16]], [14, [0.95, 0.85, 0.15]]];
+    if (pH <= st[0][0]) return st[0][1];
+    for (let i = 1; i < st.length; i++) if (pH <= st[i][0]) return mix(st[i - 1][1], st[i][1], (pH - st[i - 1][0]) / (st[i][0] - st[i - 1][0]));
+    return st[st.length - 1][1];
+  }
+  function universal(pH) {
+    const st = [[1, [0.85, 0.1, 0.1]], [4, [0.98, 0.5, 0.1]], [6, [0.98, 0.85, 0.15]], [7, [0.35, 0.75, 0.25]], [9, [0.15, 0.45, 0.8]], [11, [0.35, 0.2, 0.65]], [14, [0.42, 0.12, 0.5]]];
+    if (pH <= 1) return st[0][1];
+    for (let i = 1; i < st.length; i++) if (pH <= st[i][0]) return mix(st[i - 1][1], st[i][1], (pH - st[i - 1][0]) / (st[i][0] - st[i - 1][0]));
+    return st[st.length - 1][1];
+  }
+  const YEL = [0.98, 0.85, 0.15], BLU = [0.15, 0.35, 0.85], RED = [0.88, 0.15, 0.15];
+  const IND2 = {
+    btb: [[6.0, 7.6, YEL, BLU]],
+    lit: [[4.5, 8.3, RED, [0.25, 0.3, 0.8]]],
+    phr: [[6.8, 8.2, YEL, [0.9, 0.2, 0.45]]],
+    tur: [[7.4, 8.6, [0.95, 0.75, 0.1], [0.7, 0.25, 0.12]]],
+    mr: [[4.4, 6.2, RED, YEL]],
+    tb: [[1.2, 2.8, RED, YEL], [8.0, 9.6, YEL, BLU]],
+    bcg: [[3.8, 5.4, YEL, BLU]],
+    ali: [[10.1, 12.0, YEL, RED]]
+  };
+  /* Эритма ранги: ҳар бир рангли модданинг «қоплаш кучи» концентрацияга боғлиқ */
+  function color(st, eq) {
+    const c = eq.c, ex = st.extra || {};
+    let rgb = [0.86, 0.94, 1.0], cov = 0;
+    const layer = (col, k) => { k = Math.max(0, Math.min(1, k)); rgb = mix(rgb, col, k); cov = Math.max(cov, k); };
+    const V = Math.max(st.V, 1e-3) / 1000;
+    const o = chromo(st, eq);
+    if (ex.org > 0) layer([0.62, 0.52, 0.32], Math.min(0.55, ex.org / V * 0.12));
+    if (ex.lemon > 0) layer([0.98, 0.93, 0.55], Math.min(0.5, ex.lemon / V * 0.004));
+    if (o.cu) layer([0.25, 0.62, 0.95], Math.min(0.85, o.cu * 9));
+    if (o.fe3 && !o.fescn) layer([0.93, 0.62, 0.15], Math.min(0.8, o.fe3 * 120));
+    if (o.fescn) layer([0.62, 0.02, 0.05], Math.min(0.95, o.fescn * 900));
+    if (o.cro4) layer([0.98, 0.84, 0.1], Math.min(0.85, o.cro4 * 60));
+    if (o.cr6) layer([0.95, 0.5, 0.08], Math.min(0.9, o.cr6 * 25));
+    if (o.cr3) layer([0.2, 0.55, 0.35], Math.min(0.8, o.cr3 * 8));
+    if (o.mno4) layer([0.62, 0.1, 0.55], Math.min(0.92, o.mno4 * 4000));
+    if (o.i2s) layer([0.08, 0.1, 0.32], Math.min(0.95, o.i2s * 2500 / 1));
+    if (o.i2) layer([0.72, 0.45, 0.12], Math.min(0.85, o.i2 * 600));
+    if (o.moblue) layer([0.12, 0.35, 0.82], Math.min(0.9, o.moblue * 25000));
+    if (o.ness) layer([0.85, 0.55, 0.12], Math.min(0.9, o.ness * 9000));
+    if (o.azo) layer([0.9, 0.12, 0.45], Math.min(0.92, o.azo * 60000));
+    if (o.dpa) layer([0.15, 0.2, 0.75], Math.min(0.92, o.dpa * 3000));
+    if (o.ebtM) layer([0.62, 0.08, 0.25], Math.min(0.85, o.ebtM * 400000));
+    if (o.ebtF) layer([0.15, 0.3, 0.85], Math.min(0.85, o.ebtF * 400000));
+    if (o.murM) layer([0.92, 0.3, 0.5], Math.min(0.85, o.murM * 400000));
+    if (o.murF) layer([0.5, 0.2, 0.7], Math.min(0.85, o.murF * 400000));
+    const ind = st.ind || {};
+    if (ind.cab > 0) layer(cabbage(eq.pH), Math.min(0.9, ind.cab / V * 0.9));
+    if (ind.uni > 0) layer(universal(eq.pH), Math.min(0.9, ind.uni / V * 1.6));
+    if (ind.php > 0 && eq.pH > 8.2) layer([0.93, 0.18, 0.55], Math.min(0.9, (ind.php / V * 6) * Math.min(1, (eq.pH - 8.2) / 1.2)));
+    /* Қўшимча индикаторлар: [pH паст, pH юқори, кислотали ранг, ишқорий ранг] (Harris, 9-нашр, 11-3-жадвал) */
+    for (const k in IND2) {
+      if (!(ind[k] > 0)) continue;
+      let col = null;
+      for (const [lo, hi, a, b] of IND2[k]) { if (eq.pH <= lo) { col = col || a; break; } col = eq.pH >= hi ? b : mix(a, b, (eq.pH - lo) / (hi - lo)); if (eq.pH < hi) break; }
+      layer(col, Math.min(0.85, ind[k] / V * 4));
+    }
+    if (ind.mo > 0) layer(eq.pH < 3.1 ? [0.88, 0.15, 0.15] : eq.pH > 4.4 ? [0.98, 0.78, 0.12] : mix([0.88, 0.15, 0.15], [0.98, 0.78, 0.12], (eq.pH - 3.1) / 1.3), Math.min(0.85, ind.mo / V * 4));
+    /* Чўкма ва лойқалик */
+    const p = eq.ppt, Vl = Math.max(V, 1e-6);
+    const soil = (st.soilTur || 0);
+    const tur = Math.min(1, (p.agcl * 0.06 + p.ag2cro4 * 0.08 + p.baso4 * 0.06 + p.caco3 * 0.05 + p.cuoh * 0.08 + p.feoh * 0.1 + p.casoap * 0.08 + p.mgoh * 0.07 + p.mnoh * 0.07 + p.aloh * 0.07 + (ex.mnooh || 0) * 0.1 + (st.cuo || 0) * 0.1 + soil * 2.2) / (Vl * 1000) * 40);
+    let pcol = [0.96, 0.96, 0.94];
+    const pw = [[p.cuoh, [0.25, 0.55, 0.95]], [st.cuo || 0, [0.12, 0.12, 0.12]], [p.feoh, [0.62, 0.32, 0.1]], [p.ag2cro4, [0.62, 0.2, 0.12]], [ex.mnooh || 0, [0.5, 0.3, 0.12]], [soil * 2, [0.45, 0.33, 0.2]], [p.agcl + p.baso4 + p.caco3 + p.casoap + p.mgoh + p.mnoh + p.aloh, [0.97, 0.97, 0.95]]];
+    const sw = pw.reduce((a, [w]) => a + w, 0);
+    if (sw > 0) pcol = pw.reduce((acc, [w, col]) => acc.map((v, i) => v + col[i] * w / sw), [0, 0, 0]);
+    if (tur > 0.02) rgb = mix(rgb, pcol, Math.min(0.75, tur));
+    return { rgb, op: Math.min(0.95, 0.35 + cov * 0.5 + tur * 0.5), tur, pcol, pptAmt: sw };
+  }
+
+  window.EkoKimyo = { IND2, solveH, equil, alphas, color, cabbage, universal, conductivity, chromo, absorb, BANDS, doSat, pK, KSP, CO2SAT, KW };
+  if (typeof module !== "undefined") module.exports = window.EkoKimyo;
+})();
+
+</script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+/* ================= data from the platform (vendor/eko-labxona.js) ================= */
+const RG=[["base","Уй-рўзғор"],["ind","Индикаторлар"],["eco","Сув намуналари"],["soil","Тупроқ"],["wat","Сув таҳлили"],["lab","Лаборатория реагентлари"],["std","Буфер ва стандартлар"],["more","Ўғитлар ва органика"],["inorg","Ноорганик тузлар"],["acid","Кислота ва ишқорлар"],["org","Органик моддалар"],["bio","Биологик намуналар"]];
+const R=[["water","base","m","l","#e0f2fe","H₂O","Дистилланган сув"],["vinegar","base","m","l","#f8fafc","CH₃COOH","Ош сиркаси 9 %"],["lemon","base","m","l","#fef08a","C₆H₈O₇","Лимон шарбати"],["soda","base","m","s","#ffffff","NaHCO₃","Ичимлик содаси"],["salt","base","m","s","#ffffff","NaCl","Ош тузи"],["sugar","base","m","s","#ffffff","C₁₂H₂₂O₁₁","Шакар"],["soap","base","m","l","#fdf4ff","C₁₇H₃₅COONa","Совун эритмаси"],["vitc","base","m","s","#fff7ed","C₆H₈O₆","Витамин C"],["h2o2","base","m","l","#f0f9ff","H₂O₂ 3%","Водород пероксид 3 %"],["yeast","base","m","s","#d6b98c","🍞","Қуруқ ачитқи"],["marble","base","m","s","#f5f5f4","CaCO₃","Мармар (бўр) бўлакчаси"],["starch","base","m","l","#f8fafc","(C₆H₁₀O₅)ₙ","Крахмал клейстери"],["iodine","base","m","l","#b45309","I₂","Йод эритмаси (суюлтирилган)"],["lime","base","m","l","#f8fafc","Ca(OH)₂","Оҳак суви"],["cabbage","ind","m","l","#7e22ce","🥬","Қизил карам шираси"],["univ","ind","m","l","#22c55e","pH 1–14","Универсал индикатор"],["php","ind","u","l","#f8fafc","C₂₀H₁₄O₄","Фенолфталеин 1 %"],["mo","ind","u","l","#f97316","C₁₄H₁₄N₃NaO₃S","Метилоранж"],["ebt","ind","u","l","#7f1d1d","C₂₀H₁₂N₃NaO₇S","Эриохром қора Т"],["mur","ind","u","l","#9d174d","C₈H₈N₆O₆","Мурексид"],["rain","eco","m","l","#e0f2fe","pH≈4,3","Кислотали ёмғир намунаси"],["tap","eco","m","l","#e0f2fe","H₂O + Ca²⁺ Mg²⁺","Водопровод суви"],["river","eco","m","l","#dbeafe","Cl⁻ SO₄²⁻","Сирдарё суви намунаси"],["wastew","eco","m","l","#d6c7a1","🏭","Оқова сув (ифлосланган)"],["well","eco","u","l","#fde68a","Fe³⁺","Темирли қудуқ суви (кислоталанган)"],["aral","eco","m","l","#cffafe","≈ 100 г/л","Орол денгизи суви (Катта Орол)"],["kdr","eco","m","l","#e0e7ff","NO₃⁻ SO₄²⁻","Коллектор-дренаж суви"],["pond","eco","m","l","#bbf7d0","🦠 P N","Эвтрофик кўл суви"],["soilboz","soil","m","s","#c8a27a","0–20 см","Оч тусли бўз тупроқ (Тошкент)"],["soilsal","soil","m","s","#d6ccc2","Na⁺ Cl⁻ SO₄²⁻","Шўрланган тупроқ (Сирдарё вилояти)"],["soilfert","soil","m","s","#a47148","NO₃⁻ PO₄³⁻","Ўғит кўп солинган пахта даласи"],["soilacid","soil","m","s","#6b4f3a","pH≈5","Кислотали ўрмон тупроғи (таққослаш учун)"],["soilind","soil","u","s","#78716c","Cu Pb Zn","Саноат зонаси тупроғи (Олмалиқ)"],["hcl","lab","u","l","#f8fafc","HCl 0,1M","Хлорид кислота 0,1 М"],["h2so4","lab","u","l","#f8fafc","H₂SO₄ 0,05M","Сульфат кислота 0,05 М"],["naoh","lab","u","l","#f8fafc","NaOH 0,1M","Натрий гидроксид 0,1 М"],["na2co3","lab","u","l","#f8fafc","Na₂CO₃ 0,1M","Натрий карбонат 0,1 М"],["cacl2","lab","u","l","#f8fafc","CaCl₂ 0,1M","Кальций хлорид 0,1 М"],["agno3","lab","u","l","#f8fafc","AgNO₃ 0,05M","Кумуш нитрат 0,05 М"],["bacl2","lab","u","l","#f8fafc","BaCl₂ 0,1M","Барий хлорид 0,1 М"],["cuso4","lab","u","l","#60a5fa","CuSO₄ 0,1M","Мис (II) сульфат 0,1 М"],["fecl3","lab","u","l","#f59e0b","FeCl₃ 0,1M","Темир (III) хлорид 0,1 М"],["kscn","lab","u","l","#f8fafc","KSCN 0,1M","Калий роданид 0,1 М"],["kmno4","lab","u","l","#a21caf","KMnO₄","Калий перманганат (0,0002 М)"],["edta","wat","u","l","#f8fafc","Na₂H₂Y 0,01M","Трилон Б (ЭДТА) 0,01 М"],["nh3buf","wat","u","l","#f8fafc","NH₃ + NH₄Cl","Аммиакли буфер pH 10"],["naoh2","wat","u","l","#f8fafc","NaOH 2M","Натрий гидроксид 2 М"],["k2cro4","wat","u","l","#facc15","K₂CrO₄ 5%","Калий хромат 5 %"],["griess","wat","u","l","#fdf2f8","сульфаниламид + НЭДА","Грисс реактиви"],["moly","wat","u","l","#f8fafc","(NH₄)₆Mo₇O₂₄ + C₆H₈O₆","Молибдат реактиви (аскорбинли)"],["ness","wat","u","l","#fef9c3","K₂[HgI₄] + NaOH","Несслер реактиви"],["dpa","wat","u","l","#f8fafc","(C₆H₅)₂NH / H₂SO₄","Дифениламин (конц. H₂SO₄ да)"],["mnso4","wat","u","l","#fdf2f8","MnSO₄ (Винклер I)","Марганец (II) сульфат (Винклер I)"],["aki","wat","u","l","#f8fafc","NaOH + KI + NaN₃","Ишқорий йодид-азид (Винклер II)"],["h2so4c","wat","u","l","#f8fafc","H₂SO₄ 98%","Сульфат кислота, концентрланган"],["thio","wat","u","l","#f8fafc","Na₂S₂O₃ 0,025M","Натрий тиосульфат 0,025 М"],["kcl1","soil","m","l","#f8fafc","KCl 1M","Калий хлорид 1 М (ажратгич)"],["hcl10","soil","u","l","#f8fafc","HCl 10%","Хлорид кислота 10 %"],["k2cr2o7","soil","u","l","#ea580c","K₂Cr₂O₇ 0,4н / H₂SO₄","Калий бихромат 0,4 н (Тюрин)"],["buf4","std","m","l","#fecaca","pH 4,00","Буфер pH 4,0"],["buf7","std","m","l","#bbf7d0","pH 7,00","Буфер pH 7,0"],["buf10","std","m","l","#bfdbfe","pH 10,00","Буфер pH 10,0"],["kclstd","std","m","l","#f8fafc","KCl 0,01M","KCl 0,01 М (1413 мкСм/см)"],["nstd","std","m","l","#f8fafc","NO₃⁻-N 10 мг/л","Нитрат стандарти 10 мг/л N"],["no2std","std","m","l","#f8fafc","NO₂⁻-N 0,1 мг/л","Нитрит стандарти 0,1 мг/л N"],["pstd","std","m","l","#f8fafc","PO₄³⁻-P 1 мг/л","Фосфат стандарти 1 мг/л P"],["nhstd","std","m","l","#f8fafc","NH₄⁺-N 1 мг/л","Аммоний стандарти 1 мг/л N"],["hno301","lab","u","l","#f8fafc","HNO₃ 0,1M","Нитрат кислота 0,1 М"],["nh4cl","more","m","s","#ffffff","NH₄Cl","Аммоний хлорид (нашатир)"],["kh2po4","more","m","s","#ffffff","KH₂PO₄","Калий дигидрофосфат"],["na2hpo4","more","m","s","#ffffff","Na₂HPO₄","Натрий гидрофосфат"],["mgso4","more","m","s","#ffffff","MgSO₄·7H₂O","Магний сульфат (аччиқ туз)"],["mgcl2","more","m","s","#ffffff","MgCl₂·6H₂O","Магний хлорид"],["nh42so4","more","m","s","#ffffff","(NH₄)₂SO₄","Аммоний сульфат (азотли ўғит)"],["k2so4","more","m","s","#ffffff","K₂SO₄","Калий сульфат (калийли ўғит)"],["kno3","more","m","s","#ffffff","KNO₃","Калий нитрат (селитра)"],["etoh","more","m","l","#f8fafc","C₂H₅OH 96%","Этил спирти 96 %"],["gluc","more","m","s","#ffffff","C₆H₁₂O₆","Глюкоза (БПК стандарти)"],["kcl","inorg","m","s","#ffffff","KCl","Калий хлорид"],["na2so4","inorg","m","s","#ffffff","Na₂SO₄","Натрий сульфат (Глаубер тузи)"],["cano3","inorg","m","s","#ffffff","Ca(NO₃)₂·4H₂O","Кальций нитрат (кальцийли селитра)"],["nano3","inorg","m","s","#ffffff","NaNO₃","Натрий нитрат (чили селитраси)"],["nh4no3","inorg","u","s","#ffffff","NH₄NO₃","Аммоний нитрат (аммиакли селитра)"],["map","inorg","m","s","#ffffff","NH₄H₂PO₄","Аммофос (моноаммоний фосфат)"],["dap","inorg","m","s","#ffffff","(NH₄)₂HPO₄","Диаммоний фосфат"],["superp","inorg","m","s","#e7e5e4","Ca(H₂PO₄)₂·H₂O","Суперфосфат (оддий)"],["k2co3","inorg","m","s","#ffffff","K₂CO₃","Калий карбонат (поташ)"],["washsoda","inorg","m","s","#ffffff","Na₂CO₃·10H₂O","Кир ювиш содаси (кристалл сода)"],["nacit","inorg","m","s","#ffffff","Na₃C₆H₅O₇·2H₂O","Натрий цитрат"],["naac","inorg","m","s","#ffffff","CH₃COONa·3H₂O","Натрий ацетат"],["nh4ac","inorg","m","s","#ffffff","CH₃COONH₄","Аммоний ацетат"],["alum","inorg","m","s","#f8fafc","KAl(SO₄)₂·12H₂O","Аччиқтош (алюмокалийли)"],["al2so4","inorg","m","s","#f8fafc","Al₂(SO₄)₃·18H₂O","Алюминий сульфат (коагулянт)"],["fecl3s","inorg","u","s","#d97706","FeCl₃·6H₂O","Темир (III) хлорид (коагулянт)"],["cacl2s","inorg","m","s","#ffffff","CaCl₂","Кальций хлорид (сувсиз)"],["ki","inorg","m","s","#ffffff","KI","Калий йодид"],["na2s2o3s","inorg","m","s","#ffffff","Na₂S₂O₃·5H₂O","Натрий тиосульфат (кристалл)"],["na2so3","inorg","u","s","#ffffff","Na₂SO₃","Натрий сульфит"],["cuso4s","inorg","u","s","#3b82f6","CuSO₄·5H₂O","Мис купороси"],["na3po4","inorg","u","s","#ffffff","Na₃PO₄·12H₂O","Тринатрий фосфат"],["nahso4","inorg","u","s","#ffffff","NaHSO₄·H₂O","Натрий гидросульфат («pH-минус»)"],["bano3","inorg","u","s","#ffffff","Ba(NO₃)₂","Барий нитрат"],["hcl1","acid","u","l","#f8fafc","HCl 1M","Хлорид кислота 1 М"],["hclc","acid","u","l","#fefce8","HCl 37%","Хлорид кислота, концентрланган (37 %)"],["h2so41","acid","u","l","#f8fafc","H₂SO₄ 0,5M","Сульфат кислота 0,5 М (1 н)"],["hno31","acid","u","l","#f8fafc","HNO₃ 1M","Нитрат кислота 1 М"],["h3po4","acid","u","l","#f8fafc","H₃PO₄ 0,1M","Фосфат кислота 0,1 М"],["acglac","acid","u","l","#f8fafc","CH₃COOH 99%","Музлама сирка кислотаси (99 %)"],["naoh1","acid","u","l","#f8fafc","NaOH 1M","Натрий гидроксид 1 М"],["koh1","acid","u","l","#f8fafc","KOH 1M","Калий гидроксид 1 М"],["nh3aq","acid","u","l","#f8fafc","NH₃·H₂O 10%","Аммиак суви 10 % (нашатир спирти)"],["citacid","org","m","s","#ffffff","C₆H₈O₇","Лимон кислотаси (кукун)"],["glyc","org","m","l","#f8fafc","C₃H₈O₃","Глицерин"],["ipa","org","m","l","#f8fafc","C₃H₇OH 70%","Изопропил спирти 70 %"],["acetone","org","u","l","#f8fafc","(CH₃)₂CO","Ацетон"],["etac","org","u","l","#f8fafc","CH₃COOC₂H₅","Этилацетат"],["hexane","org","u","l","#f8fafc","C₆H₁₄","н-Гексан"],["toluene","org","u","l","#f8fafc","C₆H₅CH₃","Толуол"],["meoh","org","u","l","#f8fafc","CH₃OH","Метанол"],["petrol","org","u","l","#fde68a","C₅–C₁₂","Бензин (нефть маҳсулоти намунаси)"],["oil","org","m","l","#fde047","🌻","Кунгабоқар ёғи"],["deterg","org","m","l","#bfdbfe","ПАВ + PO₄³⁻","Кир ювиш кукуни эритмаси 1 % (фосфатли)"],["urea","org","m","s","#ffffff","CO(NH₂)₂","Карбамид (мочевина)"],["humic","org","m","l","#78350f","Na-гумат","Гумин моддалари эритмаси (натрий гумати)"],["paraf","org","m","s","#fefce8","CₙH₂ₙ₊₂","Парафин (шам)"],["potato","bio","m","s","#fde68a","🥔","Картошка бўлакчаси"],["liver","bio","m","s","#7f1d1d","🫀","Жигар бўлакчаси (хом)"],["chlor","bio","m","l","#86efac","🟢 Chlorella","Хлорелла суспензияси"],["daph","bio","m","l","#e0f2fe","🦐 Daphnia","Дафния маданияти (биотест)"],["sludge","bio","u","l","#a16207","🦠","Фаол лой (биологик тозалаш)"],["compost","bio","m","l","#a16207","🍂","Компост сўрими"],["agar","bio","m","s","#fef3c7","МПА","Озуқали агар (МПА)"],["cress","bio","m","s","#bbf7d0","🌱","Кресс-салат уруғлари (фитотест)"],["btb","ind","m","l","#22c55e","pH 6,0–7,6","Бромтимол кўки"],["litmus","ind","m","l","#7c3aed","pH 4,5–8,3","Лакмус"],["phred","ind","m","l","#fb923c","pH 6,8–8,2","Фенол қизили"],["turm","ind","m","l","#eab308","🟡 куркумин","Куркума дамламаси"],["mred","ind","u","l","#ef4444","pH 4,4–6,2","Метил қизили"],["tblue","ind","u","l","#facc15","pH 1,2–2,8; 8,0–9,6","Тимол кўки"],["bcg","ind","u","l","#0ea5e9","pH 3,8–5,4","Бромкрезол яшили"],["aliz","ind","u","l","#f59e0b","pH 10,1–12,0","Ализарин сариғи R"],["chirchiq","eco","m","l","#e0f2fe","🏔️","Чирчиқ дарёси (тоғ суви)"],["amu","eco","m","l","#e7e5e4","Na⁺ SO₄²⁻","Амударё суви (Нукус)"],["ariq","eco","m","l","#d9f99d","🌊","Шаҳар ариғи суви"],["nitwell","eco","m","l","#e0f2fe","NO₃⁻ ↑","Қишлоқ қудуғи (нитратли)"],["snow","eco","m","l","#f8fafc","❄️","Қор суви (шаҳар)"],["mineral","eco","m","l","#e0f2fe","Na⁺ HCO₃⁻ CO₂","Минерал сув (газли)"],["caspian","eco","m","l","#bae6fd","≈ 13 г/л","Каспий денгизи суви"],["leach","eco","u","l","#78350f","🗑️","Чиқинди полигони сизот суви"],["textile","eco","u","l","#c084fc","🎨","Тўқимачилик корхонаси оқоваси"],["kcl01","std","m","l","#f8fafc","KCl 0,1M","KCl 0,1 М (12,88 мСм/см)"],["kcl001","std","m","l","#f8fafc","KCl 0,001M","KCl 0,001 М (147 мкСм/см)"],["clstd","std","m","l","#f8fafc","Cl⁻ 100 мг/л","Хлорид стандарти 100 мг/л"],["so4std","std","m","l","#f8fafc","SO₄²⁻ 100 мг/л","Сульфат стандарти 100 мг/л"],["castd","std","m","l","#f8fafc","Ca²⁺ 100 мг/л","Кальций стандарти 100 мг/л"],["kmno402","lab","u","l","#86198f","KMnO₄ 0,02M","Калий перманганат 0,02 М (0,1 н)"],["h2o230","lab","u","l","#f0f9ff","H₂O₂ 30%","Водород пероксид 30 % (пергидроль)"],["nano2","inorg","u","s","#fefce8","NaNO₂","Натрий нитрит"],["k2hpo4","more","m","s","#ffffff","K₂HPO₄","Дикалий гидрофосфат"],["nah2po4","more","m","s","#ffffff","NaH₂PO₄·2H₂O","Натрий дигидрофосфат"],["mgno3","inorg","m","s","#ffffff","Mg(NO₃)₂·6H₂O","Магний нитрат"],["mncl2","inorg","u","s","#fce7f3","MnCl₂·4H₂O","Марганец(II) хлорид"],["cucl2","inorg","u","s","#2dd4bf","CuCl₂·2H₂O","Мис(II) хлорид"],["cuno3","inorg","u","s","#3b82f6","Cu(NO₃)₂·3H₂O","Мис(II) нитрат"],["agno3s","inorg","u","s","#f8fafc","AgNO₃","Кумуш нитрат (кристалл)"],["bacl2s","inorg","u","s","#ffffff","BaCl₂·2H₂O","Барий хлорид (кристалл)"],["alno3","inorg","u","s","#ffffff","Al(NO₃)₃·9H₂O","Алюминий нитрат"],["alcl3","inorg","u","s","#fefce8","AlCl₃·6H₂O","Алюминий хлорид"],["kac","inorg","m","s","#ffffff","CH₃COOK","Калий ацетат"],["nh4hco3","more","m","s","#ffffff","NH₄HCO₃","Аммоний гидрокарбонат"],["nh42co3","more","m","s","#ffffff","(NH₄)₂CO₃","Аммоний карбонат"],["kohs","acid","u","s","#ffffff","KOH","Калий гидроксид (гранула)"],["naohs","acid","u","s","#ffffff","NaOH","Натрий гидроксид (гранула)"],["mgo","inorg","m","s","#ffffff","MgO","Магний оксиди (куйдирилган магнезия)"],["kmno4s","inorg","u","s","#86198f","KMnO₄","Калий перманганат (кристалл)"],["k2cro4s","inorg","u","s","#facc15","K₂CrO₄","Калий хромат (кристалл)"],["na2co3s","inorg","m","s","#ffffff","Na₂CO₃","Кальцинирланган сода"],["naasc","base","m","s","#fffbeb","C₆H₇NaO₆","Натрий аскорбат (витамин C тузи)"],["edtas","wat","u","s","#ffffff","Na₂H₂Y·2H₂O","Трилон Б (ЭДТА динатрий тузи)"],["khco3","inorg","m","s","#ffffff","KHCO₃","Калий гидрокарбонат"],["h2so41m","acid","u","l","#f8fafc","H₂SO₄ 1M","Сульфат кислота 1 М"],["hno3c","acid","u","l","#fef9c3","HNO₃ 65%","Нитрат кислота 65 % (концентрланган)"],["nh3c","acid","u","l","#f8fafc","NH₃·H₂O 25%","Аммиак суви 25 % (концентрланган)"],["h3po485","acid","u","l","#f8fafc","H₃PO₄ 85%","Фосфат кислота 85 %"],["naoh10","acid","u","l","#f8fafc","NaOH 10%","Натрий гидроксид 10 %"],["kcl3","std","m","l","#f8fafc","KCl 3M","KCl 3 М (электрод сақлаш эритмаси)"],["saline","base","m","l","#f0f9ff","NaCl 0,9%","Физиологик эритма (NaCl 0,9 %)"],["seawater","std","m","l","#cffafe","35 ‰","Денгиз суви стандарти (35 ‰)"],["syrdarya","eco","m","l","#e7e5e4","🏞️","Сирдарё суви (Чиноз)"],["aydar","eco","m","l","#ccfbf1","≈ 8 г/л","Айдаркўл суви"],["drain","eco","m","l","#fef3c7","NO₃⁻ SO₄²⁻ Cl⁻","Шолипоя дренаж суви"],["minew","eco","u","l","#fde68a","Cu²⁺ Fe³⁺ pH≈2","Кон дренаж суви (кислотали)"],["glacier","eco","m","l","#f0f9ff","❄️ 🏔️","Музлик суви (Помир-Олой)"],["spring","eco","m","l","#e0f2fe","💧","Булоқ суви"],["onion","bio","m","s","#f5d0fe","🧅","Пиёз пўсти (ҳужайралар учун)"],["elodea","bio","m","s","#86efac","🌿","Элодея (сув ўсимлиги) барги"]];
+const EQC=[["meas","Ўлчов",31],["water","Сув",10],["soil","Тупроқ",14],["air","Ҳаво",14],["gen","Умумий",18],["glass","Шиша идишлар",17],["heat","Иситиш ва совитиш",10],["sep","Ажратиш",12],["kits","Тест тўпламлари",15],["safe","Хавфсизлик",16]];
+const EQ_TOTAL=157,EQ_U=28;
+const EQN={"hood":["Тортиш шкафи","gen","m","Ўткир ҳидли ва заҳарли буғлар (концентрланган кислоталар, аммиак, Несслер, бихромат) фақат шу ерда ишланади. Ойнани 40 см дан баланд кўтарманг.","Шкаф ичида бош суқманг; тортиш ишлаётганини текширинг."],"phm":["pH-метр (шиша электрод)","meas","m","Водород ионлари активлигини ±0,01 аниқликда ўлчайди (Нернст: 59,16 мВ/pH, 25 °C). Аввал икки буферда калибрланг, ҳар ўлчовдан кейин электродни дистиллят билан чайинг.","Шиша электрод мўрт — идиш тубига урманг; KCl эритмасида сақланг."],"mstir":["Магнит аралаштиргич","gen","m","Идиш ичидаги магнит таёқча эритмани узлуксиз аралаштиради — титрлашда қўл бўш қолади.","Тезликни секин оширинг, сачрамасин."],"burette":["Бюретка, пипетка ва ўлчов колбалари","water","m","Титрлашда реактивни 0,05–0,1 мл аниқликда қўшинг: миқдорда «1 томчи» ёки «0,1 мл» ни танланг. Мениск пастки чегараси бўйича ўқилади.","Пипеткани оғиз билан сўрманг — фақат груша билан."],"spec":["Спектрофотометр (380–900 нм)","meas","u","Бугер–Ламберт–Бер қонуни: A = ε·c·l. Тўлқин узунлигини рангли бирикманинг ютилиш максимумига қўйинг (фосфат 880, нитрит 540, аммоний 425, темир 480, перманганат 525 нм), 1 см кювета.","Кюветани қирраларидан ушланг, ташқи деворини артиб қўйинг."],"bal":["Аналитик тарози (0,0001 г)","meas","m","Идиш массаси ва ичидагисини тортади. Тарозини текис жойга қўйинг, эшикчаларни ёпиб, «тара» тугмасини босинг.","Иссиқ идишни тортманг — конвекция натижани бузади."],"cent":["Центрифуга (3000 айл/дақ)","soil","m","Лойқа сўримни 10 дақиқада тиндиради: заррачалар тубга, тиниқ эритма юқорида қолади (фильтрлашнинг тез йўли).","Пробиркаларни қарама-қарши, тенг массада жойланг; қопқоқ ёпилмагунча ишга туширманг."],"micro":["Микроскоп (×100–×1000)","gen","m","Бир томчи намуна предмет ойнасига олинади: сувўтлари, бактериялар, тупроқ заррачалари ва кристаллар кўринади.","Кўзгу билан қуёш нурини кўзга қаратманг."],"ext":["Ўт ўчиргич (CO₂ / кукунли)","safe","m","ПАСС: Пломбани узинг, Найчани олов асосига қаратинг, Сиқинг, Супуринг. Электр жиҳозлар ёнса — фақат CO₂.","Кичик спирт ёнғинини ёнмайдиган мато билан ёпиш мумкин."],"eyew":["Кўз ювгич","safe","m","Кўзга модда тушса — қовоқларни очиб, камида 15 дақиқа ювинг, кейин шифокорга.","Ҳар ҳафта текширилсин; йўл тўсилмаган бўлсин."],"shower":["Авария души","safe","m","Катта миқдорда кислота ёки ишқор тўкилса — кийимни ечиб, 15 дақиқа душ остида туринг.","Йўлак доим бўш бўлсин."],"bin":["Кимёвий чиқинди идишлари","safe","m","Алоҳида: оғир металлар (Ag, Cu, Hg, Cr), органик эритувчилар, кислота/ишқор (нейтраллангандан кейин), тупроқ ва қаттиқ чиқинди.","Идишни 3/4 дан ортиқ тўлдирманг, ёрлиқ ёпиштиринг."],"cab":["Реактивлар шкафлари (кислота, ишқор, ёнувчан)","safe","m","Мос келмайдиган реактивлар алоҳида сақланади: кислоталар ишқордан, оксидловчилар органикадан узоқда; ёнувчанлар — ёнғинга чидамли шкафда.","Ҳар бир идишда ёрлиқ ва GHS белгиси бўлсин."],"lam":["Ламинар бокс (II синф биохавфсизлик)","gen","m","HEPA фильтрланган ҳаво оқими намуна ва одамни микроблардан ҳимоя қилади; экиш шу ерда бажарилади.","Ишдан олдин 15 дақиқа УБ лампани ёқинг, лекин УБ да ичкарига қараманг."],"gcms":["Газ хроматограф-масс-спектрометр (ГХ-МС)","meas","u","Органик ифлосликларни ажратиб, масс-спектри бўйича аниқлайди: ПАУ, пестицидлар, PCB, бензол, нефть маҳсулотлари (нг/л даражасигача).","Гелий баллони юқори босимда; инжектор 280 °C — куйиш хавфи."],"icpms":["ИСП-МС (индуктив боғланган плазма)","meas","u","Аргон плазмасида (6000–10 000 K) атомларни ионлаб, 70 дан ортиқ элементни бир вақтда нг/л даражасида ўлчайди: Pb, Cd, As, Hg, U.","Плазма УБ нурланиши ва юқори кучланиш — қопқоқни очманг; аргон хонада тўпланмасин."],"auto":["Автоклав (121 °C, 15 дақиқа)","gen","u","Буғ босими остида (≈ 1 атм ортиқча) идиш ва озуқа муҳитларини стерилизация қилади — барча микроблар ва ферментлар (каталаза ҳам) парчаланади.","Босим 0 бўлмагунча қопқоқни очманг; ёпиқ идишни солманг — портлайди."],"fridge":["Лаборатория музлатгичи (+4 °C)","gen","m","Сув ва тупроқ намуналарини +4 °C да сақлайди: микроблар ва реакциялар секинлашади (нитрат, аммоний, БПК намуналари учун шарт).","Озиқ-овқат ва ичимлик сақламанг! Ёнувчан эритувчилар фақат портлашдан ҳимояланган музлатгичда."],"dist":["Дистиллятор","gen","m","Водопровод сувини буғлатиб, совитиб тоза сув олади (EC < 5 мкСм/см). Ҳар бир босишда идишга 20 мл дистиллят қўшилади.","Совитувчи сув оқимини аввал очинг, кейин иситгични ёқинг."],"wbath":["Сув ҳаммоми (термостатли)","heat","m","Намунани 100 °C дан ошмасдан, ±0,5 °C аниқликда иситади: ферментлар, БПК, колиформлар (44 °C).","Фақат дистилланган сув қуйинг; сув сатҳини кузатинг."],"oven":["Қуритиш шкафи (105 °C)","soil","m","Тупроқ намлиги: намуна 105 °C да доимий массагача қуритилади, W = (m₁ − m₂)/m₂ × 100 %.","Иссиқ бюксларни қисқич билан олинг, эксикаторда совитинг."],"inc":["Термостат-инкубатор (22 / 36 / 44 °C)","gen","m","Микроб экинларини ўстиради: колиформлар 36 °C, E. coli 44 °C, умумий санаш 22 °C; тупроқ нафас олиши 25 °C.","Экинли ликопчаларни очманг; ишдан кейин автоклавда зарарсизлантиринг."],"kit":["Биринчи ёрдам қутиси","safe","m","Бинт, лейкопластир, куйишга қарши гель, 2 % сода (кислота куйишига) ва 2 % сирка кислотаси (ишқор куйишига) эритмалари.","Ҳар қандай жароҳатни ўқитувчига дарров айтинг."],"coat":["Лаборатория халати","safe","m","Пахта ёки ёнмайдиган матодан, узун енгли, тугмаси қадалган. Синтетика ёнганда терига ёпишади.","Халатда ошхона ва синфга чиқманг."],"gogg":["Ҳимоя кўзойнаги ва юз экрани","safe","m","Ён томони ёпиқ кўзойнак сачрашдан сақлайди; концентрланган кислота ва вакуум билан ишлашда юз экрани ҳам тақилади.","Контакт линза тақиб кимёвий моддалар билан ишламанг."],"glov":["Нитрил ва кислотага чидамли қўлқоплар","safe","m","Нитрил — кўпчилик эритма ва биологик намуналар учун; концентрланган кислоталарга — қалин неопрен ёки бутил.","Қўлқопда эшик дастаги ва телефонни ушламанг."],"timer":["Секундомер ва лаборатория таймери","meas","m","Реакция тезлиги, тиндириш (60 дақиқа) ва инкубация вақтларини ўлчайди.","Иситгични таймерсиз қаровсиз қолдирманг."],"tubes":["Пробиркалар ва штатив","glass","m","Сифат реакциялари учун кичик ҳажмлар (2–5 мл). Пробирка ушлагич билан ушлаб, алангада қиздирилади.","Қиздирганда оғзини ўзингизга ва қўшнингизга қаратманг."],"cond":["Кондуктометр / TDS-метр","meas","m","Эритманинг электр ўтказувчанлиги (мкСм/см) ва эриган тузлар (TDS ≈ 0,64 × EC, мг/л). Шўрланишни баҳолашнинг энг тез усули. KCl 0,01 М стандарти = 1413 мкСм/см.","Датчикни қуруқ артманг, фақат дистиллят билан чайинг."]};
+const SAFE_LIST=["Кўз ювгич","Авария души","Ўт ўчиргич (CO₂ / кукунли)","Биринчи ёрдам қутиси","Кимёвий чиқинди идишлари","Тўкилганда: сода, қум, адсорбент","Реактивлар шкафлари (кислота, ишқор, ёнувчан)","Ҳимоя кўзойнаги ва юз экрани","Нитрил ва кислотага чидамли қўлқоплар","Лаборатория халати","Респиратор (FFP2/FFP3, газга қарши фильтр)","Ўт ўчириш адёли","Ўткир чиқиндилар ва синган шиша контейнери","Хавфсизлик паспортлари (SDS) папкаси","Газ сигнализатори (CO, ёнувчан газ)","GHS огоҳлантирувчи белгилар ва ёрлиқлар"];
+
+
+/* ================= utilities ================= */
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>{t=clamp(t,0,1);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;};
+function rng(seed){let s=seed>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const fmt=(v,d=0)=>Number.isFinite(v)?v.toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d}).replace('-','−'):'—';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const desk=()=>matchMedia('(min-width: 821px)').matches;
+
+/* ================= 1. the model: one input (mL of NaOH) drives every reading ================= */
+const K=window.EkoKimyo;
+const TIT={hcl:20,php:.05,cHCl:.1,cNaOH:.1,step:.05,max:30};
+const TT=(()=>{ // tabulated once at load with the platform's own add() rules
+  const freeHO=(eq,V)=>{const h=Math.pow(10,-eq.pH);return[h*V,K.KW/h*V];};
+  const S={V:0,T:22,tot:{},ind:{},extra:{}};
+  const add=(c,amt,ind)=>{const before=S.V>0?freeHO(K.equil(S.tot,S.V),S.V):[0,0];
+    const eq0=K.equil(Object.fromEntries(Object.entries(c).map(([k,v])=>[k,v*10])),10),stock=freeHO(eq0,amt);
+    for(const k in c)S.tot[k]=(S.tot[k]||0)+c[k]*amt;if(ind)for(const k in ind)S.ind[k]=(S.ind[k]||0)+ind[k]*amt;
+    S.T=(S.T*S.V+22*amt)/(S.V+amt);S.V+=amt;const EQ=K.equil(S.tot,S.V),after=freeHO(EQ,S.V);
+    const nW=Math.max(0,Math.min(before[0]+stock[0]-after[0],before[1]+stock[1]-after[1]));S.T=Math.min(100,S.T+55.8*nW/(S.V*4.18));};
+  add({Cl:TIT.cHCl},TIT.hcl);add({},TIT.php,{php:1});
+  const n=Math.round(TIT.max/TIT.step)+1,o={pH:new Float32Array(n),T:new Float32Array(n),EC:new Float32Array(n),rgb:[],op:new Float32Array(n)};
+  const rec=i=>{const EQ=K.equil(S.tot,S.V),c=K.color(S,EQ);o.pH[i]=EQ.pH;o.T[i]=S.T;o.EC[i]=K.conductivity(EQ);o.rgb[i]=c.rgb;o.op[i]=c.op;};
+  rec(0);for(let i=1;i<n;i++){add({Na:TIT.cNaOH},TIT.step);rec(i);}
+  return o;
+})();
+const EQV=TIT.hcl*TIT.cHCl/TIT.cNaOH; // 20 mL
+function chem(v){
+  const f=clamp(v,0,TIT.max)/TIT.step,i=Math.min(Math.floor(f),TT.pH.length-2),u=f-i;
+  const pick=a=>lerp(a[i],a[i+1],u);
+  const ci=u<.5?i:i+1;
+  return{v,pH:pick(TT.pH),T:pick(TT.T),EC:pick(TT.EC),rgb:TT.rgb[ci],op:TT.op[ci],pink:TT.pH[ci]>8.2,nNa:v*TIT.cNaOH,Vtot:TIT.hcl+TIT.php+v};
+}
+
+/* ================= 2. renderer and studio ================= */
+const canvas=$('#gl');
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}
+catch(e){$('#nogl').hidden=false;throw e;}
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.localClippingEnabled=true;
+const scene=new THREE.Scene();
+const BG=new THREE.Color('#e3e9e7');scene.background=BG;
+const camera=new THREE.PerspectiveCamera(32,1,.02,120);
+scene.add(new THREE.HemisphereLight('#f8fbfa','#b6c0bc',1.15));
+const sun=new THREE.DirectionalLight('#fff7ea',1.6);sun.position.set(-3,9,7);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-7,right:7,top:6,bottom:-6,near:1,far:25});sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
+scene.add(sun,sun.target);
+const fill=new THREE.DirectionalLight('#e8f2ff',.35);fill.position.set(6,3,4);scene.add(fill);
+
+const M=(color,o={})=>new THREE.MeshStandardMaterial(Object.assign({color,roughness:.8},o));
+function add(geo,m,x=0,y=0,z=0,parent=scene,shadow=true){const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);if(shadow){o.castShadow=true;o.receiveShadow=true;}parent.add(o);return o;}
+const box=(w,h,d,m,x,y,z,p)=>add(new THREE.BoxGeometry(w,h,d),m,x,y,z,p);
+const cyl=(r,h,m,x,y,z,p,seg=24,r2)=>add(new THREE.CylinderGeometry(r2??r,r,h,seg),m,x,y,z,p);
+const tipOf=new Map();
+function tip(objs,id,extra){(Array.isArray(objs)?objs:[objs]).forEach(o=>o.traverse(c=>{c.userData.tip=id;if(extra)c.userData.tipX=extra;}));}
+const groups={shelf:[],titr:[],hood:[],inst:[],safe:[]};
+function grp(key,...objs){groups[key].push(...objs);}
+
+/* room: same coordinates as the platform scene */
+const floor=box(9,.05,6,M('#b08968'),0,-.025,.5);
+box(9,3.6,.05,M('#e7efe9'),0,1.8,-1.625);
+box(.05,3.6,6,M('#dbe7df'),-4.525,1.8,.5);
+box(1.6,1.1,.02,new THREE.MeshBasicMaterial({color:'#bae6fd'}),-3.4,2.15,-1.59);
+box(1.7,.06,.06,M('#ffffff'),-3.4,1.58,-1.57);box(.05,1.1,.04,M('#ffffff'),-3.4,2.15,-1.57);
+for(let i=-4;i<=4;i++)box(.98,.5,.01,M(i%2?'#ffffff':'#f1f5f9'),i,1.2,-1.595,scene,false);
+/* bench */
+const benchTop=box(4.6,.08,1.3,M('#1f2937',{roughness:.5}),0,.9,-.1);
+const benchBody=box(4.5,.86,1.2,M('#f8fafc'),0,.43,-.12);
+[-1.5,0,1.5].forEach(x=>box(1.38,.7,.01,M('#e2e8f0'),x,.45,.485));
+const sink=box(.6,.02,.45,M('#94a3b8',{metalness:.6,roughness:.3}),-1.75,.945,-.2);
+const tapM=M('#94a3b8',{metalness:.7,roughness:.3});
+const tap=add(new THREE.TorusGeometry(.12,.02,8,16,Math.PI),tapM,-1.75,1.05,-.45);
+tip([sink,tap],'sink');
+
+/* reagent shelves: 7 rows x 28 bottles, one bottle per platform reagent */
+const PER=28,GAP=.17,SHELF_Y=[1.3,1.61,1.92,2.23,2.54,2.85,3.16];
+const boards=SHELF_Y.map(y=>box(4.85,.035,.3,M('#8b5e34'),.12,y-.02,-1.42));
+for(const x of[-2.31,2.55])box(.035,1.95,.3,M('#7a5130'),x,2.24,-1.42);
+grp('shelf',...boards);
+const BOT={};
+{
+  const glassL='#dbeafe',glassS='#f1f5f9';
+  const mk=(geo,color,n)=>{const m=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({color,roughness:.45}),n);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;};
+  const liq=R.filter(r=>r[3]!=='s').length,sol=R.length-liq;
+  const g=(r1,r2,h,y)=>new THREE.CylinderGeometry(r1,r2,h,14).translate(0,y,0);
+  const upperL=(()=>{const a=g(.08,.088,.07,.205),b=g(.035,.05,.05,.265);const m=new THREE.BufferGeometry();const pa=[...a.toNonIndexed().attributes.position.array,...b.toNonIndexed().attributes.position.array],na=[...a.toNonIndexed().attributes.normal.array,...b.toNonIndexed().attributes.normal.array];m.setAttribute('position',new THREE.Float32BufferAttribute(pa,3));m.setAttribute('normal',new THREE.Float32BufferAttribute(na,3));return m;})();
+  BOT.l={body:mk(g(.088,.1,.17,.085),'#ffffff',liq),up:mk(upperL,glassL,liq),cap:mk(g(.045,.045,.05,.3),'#334155',liq),lab:mk(new THREE.BoxGeometry(.1,.07,.004).translate(0,.1,.097),'#ffffff',liq)};
+  BOT.s={body:mk(g(.09,.09,.12,.06),'#ffffff',sol),up:mk(g(.09,.09,.08,.16),glassS,sol),cap:mk(g(.07,.07,.06,.23),'#0f766e',sol),lab:mk(new THREE.BoxGeometry(.1,.07,.004).translate(0,.08,.091),'#ffffff',sol)};
+  const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),s=V3(.66,.66,.66);let il=0,is=0;
+  BOT.index=[];
+  R.forEach((r,i)=>{const row=Math.floor(i/PER),col=i%PER,x=-2.185+col*GAP,y=SHELF_Y[row],z=-1.42;
+    m4.compose(V3(x,y,z),q,s);const set=r[3]==='s'?BOT.s:BOT.l,k=r[3]==='s'?is++:il++;
+    for(const p of['body','up','cap','lab'])set[p].setMatrixAt(k,m4);BOT.index.push([set,k]);set.body.userData.map=set.body.userData.map||[];set.body.userData.map[k]=i;set.lab.userData.map=set.body.userData.map;});
+  for(const set of[BOT.l,BOT.s]){for(const p of['body','up','cap','lab'])set[p].instanceMatrix.needsUpdate=true;set.up.userData.map=set.cap.userData.map=set.body.userData.map;}
+}
+const C_LOCK=new THREE.Color('#9ca3af'),C_LAB=new THREE.Color('#ffffff'),C_LABL=new THREE.Color('#fca5a5'),tmpC=new THREE.Color();
+let shownStage='u';
+function paintBottles(stage,mixT=1){
+  R.forEach((r,i)=>{const[set,k]=BOT.index[i],lock=stage==='m'&&r[2]==='u';
+    tmpC.set(r[4]);if(lock)tmpC.lerp(C_LOCK,mixT);set.body.setColorAt(k,tmpC);set.lab.setColorAt(k,lock?C_LABL:C_LAB);});
+  for(const set of[BOT.l,BOT.s]){set.body.instanceColor.needsUpdate=true;set.lab.instanceColor.needsUpdate=true;}
+}
+paintBottles('u');
+
+/* ================= 3. the titration rig (real sizes) ================= */
+const RIG={x:.2,z:.15,top:.94};
+const glassM=new THREE.MeshStandardMaterial({color:'#e8f4fb',transparent:true,opacity:.26,roughness:.06,side:THREE.DoubleSide,depthWrite:false});
+const steel=M('#9aa5aa',{metalness:.55,roughness:.4}),dark=M('#1e293b',{roughness:.4}),white=M('#f8fafc',{roughness:.5});
+const rig=new THREE.Group();scene.add(rig);
+/* magnetic stirrer (platform: 0.28 x 0.07 x 0.28) */
+const stir=box(.28,.07,.28,M('#f1f5f9'),RIG.x,RIG.top+.035,RIG.z,rig);
+add(new THREE.CylinderGeometry(.11,.11,.012,32),M('#94a3b8',{metalness:.5}),RIG.x,RIG.top+.076,RIG.z,rig);
+box(.06,.03,.01,M('#2563eb'),RIG.x,RIG.top+.035,RIG.z+.145,rig);
+tip(stir,'mstir');
+/* 250 mL Erlenmeyer: base 85 mm, height 145 mm, neck 34 mm */
+const FL={R:.0425,rn:.017,hc:.10,h:.145,y0:RIG.top+.082};
+const flR=y=>y<FL.hc?FL.R-(FL.R-FL.rn)*y/FL.hc:FL.rn;
+const flaskPts=[];for(let i=0;i<=40;i++){const y=FL.h*i/40;flaskPts.push(new THREE.Vector2(flR(y),y));}
+const flask=add(new THREE.LatheGeometry(flaskPts,40),glassM,RIG.x,FL.y0,RIG.z,rig,false);
+const flaskBase=add(new THREE.CircleGeometry(FL.R,40),glassM,RIG.x,FL.y0+.001,RIG.z,rig,false);flaskBase.rotation.x=-Math.PI/2;
+const flVol=h=>{const r=flR(Math.min(h,FL.hc));const hc=Math.min(h,FL.hc);let v=Math.PI*hc/3*(FL.R*FL.R+FL.R*r+r*r);if(h>FL.hc)v+=Math.PI*FL.rn*FL.rn*(h-FL.hc);return v*1e6;}; // mL
+const flH=ml=>{let a=0,b=FL.h;for(let i=0;i<40;i++){const m=(a+b)/2;if(flVol(m)<ml)a=m;else b=m;}return(a+b)/2;};
+const liqM=new THREE.MeshStandardMaterial({color:'#dbeafe',transparent:true,opacity:.55,roughness:.2});
+const liq=add(new THREE.CylinderGeometry(.04,.04,.004,40),liqM,RIG.x,FL.y0,RIG.z,rig,false);
+let liqH=-1;
+function setLiquid(ml,rgb,op){
+  const h=flH(ml);if(Math.abs(h-liqH)>2e-4){liqH=h;liq.geometry.dispose();liq.geometry=new THREE.CylinderGeometry(flR(h)*.97,FL.R*.97,h,40);liq.position.y=FL.y0+h/2+.001;}
+  liqM.color.setRGB(rgb[0],rgb[1],rgb[2],THREE.SRGBColorSpace);liqM.opacity=clamp(.35+op*.55,.35,.88);
+}
+const stirBar=add(new THREE.CapsuleGeometry(.004,.022,4,10),white,RIG.x,FL.y0+.006,RIG.z,rig,false);stirBar.rotation.z=Math.PI/2;
+tip([flask,flaskBase,liq],'flask');
+/* retort stand and clamp */
+const ST={x:RIG.x,z:RIG.z-.17};
+box(.24,.015,.16,dark,ST.x,RIG.top+.0075,ST.z,rig);
+cyl(.006,.98,steel,ST.x,RIG.top+.49,ST.z,rig,12);
+box(.012,.012,.17,steel,ST.x,1.62,ST.z+.085,rig);box(.012,.012,.17,steel,ST.x,1.42,ST.z+.085,rig);
+add(new THREE.TorusGeometry(.012,.003,6,16),steel,RIG.x,1.62,RIG.z,rig).rotation.x=Math.PI/2;
+add(new THREE.TorusGeometry(.012,.003,6,16),steel,RIG.x,1.42,RIG.z,rig).rotation.x=Math.PI/2;
+/* 50 mL burette: 0 mark at 1.85 m, 50 mL at 1.30 m (11 mm per mL) */
+const BU={r:.0065,top:1.90,bot:1.255,z0:1.85,mm:.011,tip:FL.y0+FL.h-.01};
+const buret=add(new THREE.CylinderGeometry(BU.r,BU.r,BU.top-BU.bot,20,1,true),glassM,RIG.x,(BU.top+BU.bot)/2,RIG.z,rig,false);
+add(new THREE.CylinderGeometry(.0018,BU.r*.6,BU.bot-.03-BU.tip,12,1,true),glassM,RIG.x,(BU.bot-.03+BU.tip)/2,RIG.z,rig,false);
+const cock=box(.03,.012,.012,M('#e2e8f0'),RIG.x,BU.bot-.015,RIG.z,rig);
+add(new THREE.CylinderGeometry(.009,.009,.028,12),M('#38bdf8'),RIG.x,BU.bot-.015,RIG.z,rig).rotation.z=Math.PI/2;
+const buLiqM=new THREE.MeshStandardMaterial({color:'#cfe8fb',transparent:true,opacity:.7,roughness:.2});
+const buLiq=add(new THREE.CylinderGeometry(BU.r*.85,BU.r*.85,1,16),buLiqM,RIG.x,1.5,RIG.z,rig,false);
+{const pts=[];for(let ml=0;ml<=50;ml+=1){const y=BU.z0-ml*BU.mm,w=ml%10===0?.006:ml%5===0?.004:.0025;pts.push(V3(RIG.x-BU.r-.0005,y,RIG.z+.002),V3(RIG.x-BU.r-.0005-w,y,RIG.z+.002));}
+ rig.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:'#122220'})));}
+tip([buret,cock,buLiq],'burette');
+/* pH meter (platform position) with a live screen and a glass electrode in the flask */
+const meter=box(.34,.22,.14,M('#0f766e'),.95,1.05,.1);
+const scrCv=document.createElement('canvas');scrCv.width=256;scrCv.height=112;const scrTex=new THREE.CanvasTexture(scrCv);scrTex.colorSpace=THREE.SRGBColorSpace;
+const scr=add(new THREE.PlaneGeometry(.26,.114),new THREE.MeshBasicMaterial({map:scrTex,toneMapped:false}),.95,1.07,.171,scene,false);
+let scrTxt='';
+function drawScreen(ph,t){const s=`pH ${fmt(ph,2)}|${fmt(t,1)} °C`;if(s===scrTxt)return;scrTxt=s;const g=scrCv.getContext('2d');g.fillStyle='#052e2b';g.fillRect(0,0,256,112);g.fillStyle='#34d399';g.font='600 50px "JetBrains Mono",monospace';g.textBaseline='middle';g.fillText('pH '+fmt(ph,2),14,44);g.fillStyle='#a7f3d0';g.font='400 26px "JetBrains Mono",monospace';g.fillText(fmt(t,1)+' °C  ATC',14,92);scrTex.needsUpdate=true;}
+const ePts=[V3(RIG.x-.004,FL.y0+.012,RIG.z+.006),V3(RIG.x+.021,1.30,RIG.z+.03)];
+const electrode=(()=>{const d=ePts[1].clone().sub(ePts[0]),L=d.length();const e=add(new THREE.CylinderGeometry(.0045,.0045,L,12),M('#e2e8f0',{roughness:.3}),0,0,0,rig);e.position.copy(ePts[0]).add(ePts[1]).multiplyScalar(.5);e.quaternion.setFromUnitVectors(V3(0,1,0),d.normalize());return e;})();
+add(new THREE.SphereGeometry(.006,12,8),M('#cbd5e1',{transparent:true,opacity:.7}),ePts[0].x,ePts[0].y,ePts[0].z,rig,false);
+add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([ePts[1],V3(RIG.x+.05,1.36,RIG.z+.05),V3(.6,1.22,.2),V3(.8,1.05,.17),V3(.95,1.0,.17)]),40,.003,6),dark,0,0,0,rig);
+tip([meter,scr,electrode],'phm');
+grp('titr',flask,buret,meter,stir);
+
+/* ================= 4. the room's equipment (platform positions and shapes) ================= */
+const glassB=new THREE.MeshStandardMaterial({color:'#bae6fd',transparent:true,opacity:.35,roughness:.05});
+const metal=M('#94a3b8',{metalness:.6,roughness:.35});
+const items={};
+function item(id,x,y,z,build,key){const g=new THREE.Group();g.position.set(x,y,z);build(g);scene.add(g);tip(g,id);items[id]=g;if(key)grp(key,...g.children.filter(c=>c.isMesh));return g;}
+const part=(g,w,h,d,m,x,y,z)=>box(w,h,d,m,x,y,z,g);
+const cy=(g,r,h,m,x,y,z)=>cyl(r,h,m,x,y,z,g,20);
+item('ext',-4.2,0,-.55,g=>{cy(g,.11,.5,M('#dc2626',{roughness:.4}),0,.25,0);cy(g,.03,.08,dark,0,.54,0);},'safe');
+item('eyew',2.6,1.3,-1.52,g=>{part(g,.36,.3,.12,M('#16a34a'),0,0,0);cy(g,.05,.08,white,-.08,.17,.04);cy(g,.05,.08,white,.08,.17,.04);},'safe');
+item('kit',3.4,1.3,-1.52,g=>{part(g,.4,.3,.12,white,0,0,0);part(g,.06,.18,.01,M('#16a34a'),0,0,.065);part(g,.18,.06,.01,M('#16a34a'),0,0,.065);},'safe');
+item('coat',-4.38,1.45,-.6,g=>{part(g,.06,.62,.34,white,0,0,0);},'safe');
+item('gogg',-4.38,1.3,-.15,g=>{part(g,.06,.12,.26,M('#0ea5e9',{transparent:true,opacity:.75}),0,0,0);},'safe');
+item('glov',-4.38,1.05,.2,g=>{part(g,.06,.2,.22,M('#6366f1'),0,0,0);},'safe');
+item('shower',-4.25,0,1.55,g=>{cy(g,.025,2.3,metal,0,1.15,0);cy(g,.16,.05,M('#16a34a'),0,2.28,.12);part(g,.02,.02,.3,metal,0,1.6,.15);},'safe');
+item('cab',2.95,0,-1.28,g=>{part(g,.56,.9,.42,M('#facc15',{roughness:.6}),0,.45,0);part(g,.01,.8,.01,dark,0,.45,.215);part(g,.2,.12,.01,M('#dc2626'),-.13,.75,.215);},'safe');
+item('bin',2.75,0,.7,g=>{part(g,.45,.6,.45,M('#facc15'),0,.3,0);part(g,.47,.04,.47,dark,0,.62,0);},'safe');
+const ovenLamp=M('#ef4444',{emissive:'#ef4444',emissiveIntensity:.6});
+item('oven',2.95,.9,-1.28,g=>{part(g,.52,.36,.4,M('#cbd5e1'),0,.18,0);part(g,.34,.24,.01,dark,-.04,.18,.205);part(g,.06,.06,.01,ovenLamp,.2,.28,.205);},'inst');
+item('tubes',-1.15,.94,.33,g=>{part(g,.3,.04,.12,M('#f59e0b'),0,.12,0);part(g,.3,.02,.12,M('#f59e0b'),0,.01,0);['#f87171','#60a5fa','#4ade80','#facc15'].forEach((c,i)=>cy(g,.016,.2,M(c,{transparent:true,opacity:.8}),[-.1,-.035,.035,.1][i],.11,0));});
+const centLid={};
+item('cent',1.55,.94,.3,g=>{cy(g,.17,.2,M('#e2e8f0'),0,.1,0);centLid.rot=new THREE.Group();centLid.rot.position.set(0,.21,0);g.add(centLid.rot);cy(centLid.rot,.13,.02,M('#60a5fa',{transparent:true,opacity:.6}),0,0,0);for(let i=0;i<4;i++){const a=i*Math.PI/2;cy(centLid.rot,.018,.03,dark,.08*Math.cos(a),.01,.08*Math.sin(a));}part(g,.1,.05,.01,dark,0,.1,.175);},'inst');
+item('cond',2.05,.94,.05,g=>{part(g,.18,.1,.24,M('#1d4ed8'),0,.05,0);part(g,.12,.05,.01,M('#052e2b'),0,.08,.125);cy(g,.012,.24,dark,.07,.2,-.06);},'inst');
+item('timer',1.95,.94,-.5,g=>{cy(g,.06,.03,M('#f97316'),0,.06,0).rotation.x=Math.PI/2;});
+item('wbath',-2.85,.94,-.3,g=>{part(g,.4,.18,.3,M('#e2e8f0'),0,.09,0);part(g,.34,.01,.24,M('#7dd3fc',{transparent:true,opacity:.7}),0,.17,0);},'inst');
+item('fridge',3.95,0,-1.15,g=>{part(g,.8,1.9,.7,white,0,.95,0);part(g,.04,.5,.04,metal,-.35,1.2,.36);part(g,.78,.01,.01,M('#cbd5e1'),0,1.3,.35);},'inst');
+const specScr=new THREE.MeshBasicMaterial({color:'#22d3ee'});
+item('spec',1.65,.94,-.35,g=>{part(g,.55,.22,.4,M('#334155'),0,.11,0);part(g,.2,.1,.01,specScr,-.1,.16,.205);},'inst');
+item('bal',-.95,.94,-.4,g=>{part(g,.36,.06,.36,white,0,.03,0);part(g,.3,.22,.3,new THREE.MeshStandardMaterial({color:'#e0f2fe',transparent:true,opacity:.4}),0,.17,0);},'inst');
+item('micro',1.0,.94,-.45,g=>{part(g,.12,.04,.2,dark,0,.02,0);part(g,.04,.32,.04,dark,0,.18,-.07);part(g,.06,.16,.06,dark,0,.31,.03);},'inst');
+item('auto',-4.0,0,.6,g=>{cy(g,.28,.55,metal,0,.28,0);cy(g,.2,.04,dark,0,.57,0);},'inst');
+item('dist',-2.6,2.4,-1.5,g=>{part(g,.3,.45,.18,white,0,0,0);cy(g,.02,.3,metal,.1,-.35,.05);});
+const bench2=new THREE.Group();bench2.position.set(3.95,0,.75);scene.add(bench2);part(bench2,.85,.06,1.9,M('#1f2937',{roughness:.5}),0,.9,0);part(bench2,.8,.86,1.8,M('#f1f5f9'),0,.43,0);
+item('gcms',3.95,.93,.05,g=>{part(g,.55,.4,.45,M('#e2e8f0'),0,.2,0);part(g,.25,.08,.02,new THREE.MeshBasicMaterial({color:'#4ade80'}),-.1,.3,.23);cy(g,.05,.12,metal,.18,.46,0);},'inst');
+item('icpms',3.95,.93,.75,g=>{part(g,.6,.45,.5,M('#cbd5e1'),0,.225,0);part(g,.14,.14,.02,new THREE.MeshBasicMaterial({color:'#c084fc'}),.12,.28,.26);},'inst');
+item('inc',3.95,.93,1.42,g=>{part(g,.5,.42,.45,white,0,.21,0);part(g,.36,.28,.02,glassB,0,.22,.23);},'inst');
+item('lam',-2.4,0,1.9,g=>{part(g,1.2,.9,.7,M('#e2e8f0'),0,.45,0);part(g,1.2,.08,.72,dark,0,.92,0);part(g,1.2,.8,.7,M('#f8fafc'),0,1.36,0);part(g,1.1,.5,.02,glassB,0,1.26,.36);});
+/* fume hood: hollow so the airflow can be seen; side panel cut on focus */
+const hoodPlane=new THREE.Plane(V3(-1,0,0),1e4);
+const HD={x:-3.6,z:-1.2,w:1.5,d:.7,y0:.94,y1:2.3,sash:.40};
+const hoodM=M('#e2e8f0'),hoodC=hoodM.clone();hoodC.clippingPlanes=[hoodPlane];hoodC.side=THREE.DoubleSide;
+const hood=new THREE.Group();scene.add(hood);
+part(hood,1.5,.86,.7,M('#cbd5e1'),HD.x,.43,HD.z);part(hood,1.5,.08,.72,dark,HD.x,.9,HD.z);
+const hP=[part(hood,1.5,1.36,.03,M('#a7b4b1'),HD.x,1.62,HD.z-.335),part(hood,.03,1.36,.7,hoodM,HD.x-.735,1.62,HD.z),part(hood,.03,1.36,.7,hoodC,HD.x+.735,1.62,HD.z),part(hood,1.5,.03,.7,hoodM,HD.x,2.285,HD.z),part(hood,1.5,.12,.03,hoodC,HD.x,2.24,HD.z+.335)];
+const baffle=part(hood,1.4,.9,.015,M('#cbd5e1'),HD.x,1.55,HD.z-.25);baffle.rotation.x=.12;
+const sash=part(hood,1.44,.84,.015,new THREE.MeshStandardMaterial({color:'#bae6fd',transparent:true,opacity:.3,roughness:.05,depthWrite:false}),HD.x,HD.y0+HD.sash+.42,HD.z+.34);
+cyl(.13,1.3,M('#b8c2c0',{metalness:.3,roughness:.5}),HD.x,2.95,HD.z-.12,hood,24);
+const hb=cyl(.035,.08,M('#e8f4fb',{transparent:true,opacity:.4}),HD.x,.98,HD.z+.02,hood,16);
+tip(hood,'hood');grp('hood',...hP,sash);
+
+/* labels: names come from the platform */
+const nameOf=id=>id==='sink'?'Раковина ва жўмрак':id==='flask'?'Колба 250 мл: HCl 0,1 М + фенолфталеин':(EQN[id]?EQN[id][0]:id);
+
+/* ================= 5. animated bits ================= */
+const ptsMat=new THREE.ShaderMaterial({uniforms:{uScale:{value:600}},transparent:true,depthWrite:false,
+  vertexShader:`attribute float size;attribute float alpha;attribute vec3 tint;varying float vA;varying vec3 vC;uniform float uScale;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*mv;gl_PointSize=min(size*uScale/max(-mv.z,.02),300.0);vA=alpha;vC=tint;}`,
+  fragmentShader:`varying float vA;varying vec3 vC;void main(){vec2 d=gl_PointCoord-.5;float r=length(d)*2.0;if(r>1.0)discard;float a=vA*(1.0-smoothstep(.35,1.0,r));gl_FragColor=vec4(vC,a);}`});
+function cloud(n,tint){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));g.setAttribute('size',new THREE.BufferAttribute(new Float32Array(n),1));g.setAttribute('alpha',new THREE.BufferAttribute(new Float32Array(n),1));const c=new THREE.Color(tint),t=new Float32Array(n*3);for(let i=0;i<n;i++)t.set([c.r,c.g,c.b],i*3);g.setAttribute('tint',new THREE.BufferAttribute(t,3));const p=new THREE.Points(g,ptsMat);p.frustumCulled=false;scene.add(p);return p;}
+const NF=90,fumes=cloud(NF,'#6f8a96'),NA=60,airIn=cloud(NA,'#5fa8c8');
+const fSeed=(()=>{const r=rng(3),a=[];for(let i=0;i<Math.max(NF,NA);i++)a.push([r(),r(),r()]);return a;})();
+const drops=[];const dropMat=new THREE.MeshStandardMaterial({color:'#cfe8fb',transparent:true,opacity:.8});
+for(let i=0;i<6;i++){const d=add(new THREE.SphereGeometry(.0028,8,6),dropMat,RIG.x,0,RIG.z,rig,false);d.visible=false;drops.push({m:d,t:-1});}
+
+/* ================= 6. foci, camera, tour ================= */
+const FOCI={
+  overview:{label:'Умумий',   cam:{t:[-.2,1.3,.4],p:[7.35,5.5,11.1]},anchor:null},
+  shelf:   {label:'Жавон',    cam:{t:[.12,2.25,-1.42],p:[.7,2.45,5.6]},anchor:[.12,3.3,-1.42]},
+  titr:    {label:'Титрлаш',  cam:{t:[.575,1.25,.12],p:[.42,1.6,1.65]},anchor:[RIG.x,FL.y0+.07,RIG.z]},
+  hood:    {label:'Тортиш шкафи',cam:{t:[-3.55,1.5,-1.15],p:[-1.1,2.05,.83]},anchor:[-3.6,1.5,-1.0]},
+  inst:    {label:'Асбоблар', cam:{t:[2.7,1.15,-.1],p:[.6,2.5,3.9]},anchor:[1.65,1.25,-.35]},
+  safe:    {label:'Хавфсизлик',cam:{t:[-4.2,1.1,.45],p:[-.7,2.85,1.51]},anchor:[-4.2,.55,-.55]},
+};
+const ORDER=Object.keys(FOCI);
+const SCRIPT=[
+  {t:0, focus:'overview'},
+  {t:6, focus:'shelf',btn:'f-shelf'},
+  {t:11,focus:'shelf',btn:'st-m',stage:'m'},
+  {t:15,focus:'shelf',btn:'st-u',stage:'u'},
+  {t:19,focus:'titr',btn:'f-titr'},
+  {t:40,focus:'hood',btn:'f-hood'},
+  {t:47,focus:'inst',btn:'f-inst'},
+  {t:54,focus:'safe',btn:'f-safe'},
+  {t:61,focus:'overview',btn:'f-overview'},
+];
+const TOUR_LEN=67,DRIFT=.025;
+const vTour=t=>t<21?0:t<29?18*ease((t-21)/8):t<34?18+3*((t-29)/5):t<37.5?21+9*ease((t-34)/3.5):30;
+const stageTour=t=>t>=11&&t<15?'m':'u';
+function beatIndex(t){let i=0;for(let k=0;k<SCRIPT.length;k++)if(SCRIPT[k].t<=t)i=k;return i;}
+function runStart(i){let k=i;while(k>0&&SCRIPT[k-1].focus===SCRIPT[i].focus)k--;return SCRIPT[k].t;}
+let distScale=1;
+function presetPose(focus,drift){const f=FOCI[focus].cam,T=V3(...f.t),off=V3(...f.p).sub(T).multiplyScalar(distScale);off.applyAxisAngle(V3(0,1,0),drift);return{t:T,p:T.clone().add(off)};}
+function blendPose(a,b,u){const t=a.t.clone().lerp(b.t,u);const sa=new THREE.Spherical().setFromVector3(a.p.clone().sub(a.t)),sb=new THREE.Spherical().setFromVector3(b.p.clone().sub(b.t));let d=sb.theta-sa.theta;d=Math.atan2(Math.sin(d),Math.cos(d));const s=new THREE.Spherical(Math.exp(lerp(Math.log(sa.radius),Math.log(sb.radius),u)),lerp(sa.phi,sb.phi,u),sa.theta+d*u);return{t,p:t.clone().add(V3(0,0,0).setFromSpherical(s))};}
+function tourPose(t,startPose){const i=beatIndex(t),b=SCRIPT[i],rs=runStart(i),d=reduced?0:DRIFT;const sw=Math.sin((t-rs)*d*2)*.18;let pose=presetPose(b.focus,sw);
+  if(rs===b.t){const u=(t-b.t)/1.7;if(u<1){const prev=i===0?startPose:presetPose(SCRIPT[i-1].focus,Math.sin((t-runStart(i-1))*d*2)*.18);if(prev)pose=blendPose(prev,pose,ease(u));}}return pose;}
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=.08;controls.maxPolarAngle=Math.PI*.49;controls.minDistance=.25;controls.maxDistance=16;controls.enabled=false;
+const curTarget=V3(0,0,0);
+function applyPose(p){camera.position.copy(p.p);camera.lookAt(p.t);curTarget.copy(p.t);}
+const curPose=()=>({p:camera.position.clone(),t:curTarget.clone()});
+applyPose(presetPose('overview',0));
+
+/* ================= 7. state ================= */
+const live={v:0,stage:'u',focus:'overview'};
+const tour={active:!reduced,t:0,startPose:curPose()};
+let camTween=null,lastInput=-1e9,clock=0,last=performance.now(),vAct=0,vPrev=0,dropAcc=0;
+const vis={acc:{},hoodCut:0,stageMix:1};
+function stateNow(){if(tour.active){const b=SCRIPT[beatIndex(tour.t)];return{v:vTour(tour.t),stage:stageTour(tour.t),focus:b.focus};}return{v:live.v,stage:live.stage,focus:live.focus};}
+function stopTour(){if(!tour.active)return;const s=stateNow();tour.active=false;Object.assign(live,{v:Math.round(s.v/TIT.step)*TIT.step,stage:s.stage,focus:s.focus});controls.target.copy(curTarget);controls.enabled=true;controls.update();syncControls();setCursor(false);}
+function startTour(){tour.active=true;tour.t=0;tour.startPose=curPose();camTween=null;controls.enabled=false;syncControls();}
+function onUser(e){if(e.target&&e.target.closest&&e.target.closest('#tourBtn'))return;lastInput=clock;if(tour.active)stopTour();}
+for(const ev of['pointerdown','wheel','keydown','touchstart'])document.addEventListener(ev,onUser,{capture:true,passive:true});
+
+/* ================= 8. UI ================= */
+const dock=$('#dockbar');
+ORDER.forEach((k,i)=>{const b=document.createElement('button');b.type='button';b.className='fbtn';b.id='f-'+k;b.innerHTML=`<span class="k">${i+1}</span>${FOCI[k].label}`;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>setFocus(k));dock.appendChild(b);});
+function setFocus(k){live.focus=k;camTween={from:curPose(),to:presetPose(k,0),t0:clock,dur:1.5};controls.enabled=false;syncControls();}
+document.addEventListener('keydown',e=>{if(e.target.matches('input'))return;const n=+e.key;if(n>=1&&n<=ORDER.length)setFocus(ORDER[n-1]);});
+const vIn=$('#vb');
+const setV=v=>{live.v=clamp(Math.round(v/TIT.step)*TIT.step,0,TIT.max);syncControls();};
+vIn.addEventListener('input',()=>setV(+vIn.value));
+$('#drop').addEventListener('click',()=>{setV(live.v+TIT.step);if(live.focus!=='titr')setFocus('titr');});
+$('#ml1').addEventListener('click',()=>{setV(live.v+1);if(live.focus!=='titr')setFocus('titr');});
+$('#reset').addEventListener('click',()=>{live.v=0;vAct=0;vPrev=0;syncControls();});
+$('#st-m').addEventListener('click',()=>{live.stage='m';syncControls();});
+$('#st-u').addEventListener('click',()=>{live.stage='u';syncControls();});
+$('#tourBtn').addEventListener('click',()=>{if(tour.active){lastInput=clock;stopTour();}else startTour();});
+const about=$('#about'),scrim=$('#scrim');
+const openAbout=o=>{about.hidden=!o;scrim.hidden=!o;if(o)$('#aboutClose').focus();};
+$('#aboutBtn').addEventListener('click',()=>openAbout(true));$('#aboutClose').addEventListener('click',()=>openAbout(false));scrim.addEventListener('click',()=>openAbout(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!about.hidden)openAbout(false);});
+function syncControls(){
+  const s=stateNow();
+  vIn.value=String(s.v);$('#vOut').textContent=fmt(s.v,2);
+  $('#st-m').setAttribute('aria-pressed',s.stage==='m');$('#st-u').setAttribute('aria-pressed',s.stage==='u');
+  for(const k of ORDER)$('#f-'+k).setAttribute('aria-pressed',s.focus===k);
+  $('#tourBox').classList.toggle('live',!tour.active);
+  $('#tourTxt').textContent=tour.active?'Авто тур':'Сиз бошқаряпсиз';
+  $('#tourBtn').textContent=tour.active?'Тўхтатиш':'Авто турни бошлаш';
+}
+
+/* inventory: reagents by group, instruments by category (platform data) */
+const RU=Object.fromEntries(RG.map(([k])=>[k,{m:0,u:0}]));R.forEach(r=>RU[r[1]][r[2]]++);
+function invHtml(kind){
+  if(kind==='eq'){const mx=Math.max(...EQC.map(c=>c[2]));return EQC.map(([k,n,c])=>`<li><span>${n}</span><span class="bar"><i style="width:${c/mx*100}%"></i></span><b>${c}</b></li>`).join('');}
+  const mx=Math.max(...RG.map(([k])=>RU[k].m+RU[k].u));
+  return RG.map(([k,n])=>{const a=RU[k];return`<li><span>${n}</span><span class="bar"><i style="width:${a.m/mx*100}%"></i><i class="u" style="width:${a.u/mx*100}%"></i></span><b>${a.m+a.u}</b></li>`;}).join('');
+}
+let invKind='';
+function setInv(kind){if(kind===invKind)return;invKind=kind;$('#inv').innerHTML=invHtml(kind);$('#invU').textContent=kind==='eq'?`асбоб, жами ${EQ_TOTAL}`:`модда, жами ${R.length}`;document.querySelector('.legend').hidden=kind==='eq';}
+
+/* labels */
+const LABELS=[
+  {txt:'Реагентлар жавони',val:String(R.length),at:[.12,3.42,-1.42],show:['overview','shelf']},
+  {txt:'Титрлаш',at:[RIG.x,1.98,RIG.z],show:['overview']},
+  {txt:'Тортиш шкафи',at:[-3.6,2.5,-1.0],show:['overview','hood']},
+  {txt:'Ламинар бокс',at:[-2.4,1.95,1.9],show:['overview']},
+  {txt:'ГХ-МС · ИСП-МС',at:[3.95,1.55,.4],show:['overview']},
+  {txt:'Музлатгич',at:[3.95,2.05,-1.15],show:['overview']},
+  {txt:'Хавфсизлик',at:[-4.2,1.95,.2],show:['overview']},
+  {lock:1,txt:'🔒 университет',at:[.12,1.05,-1.2],show:['shelf']},
+  {txt:'Бюретка · NaOH 0,1 М',at:[RIG.x+.012,1.36,RIG.z],show:['titr']},
+  {txt:'Колба · HCl 0,1 М',at:[RIG.x-.07,FL.y0+.02,RIG.z+.04],show:['titr'],left:1},
+  {txt:'pH-метр',at:[.95,1.2,.12],show:['titr']},
+  {txt:'Магнит аралаштиргич',at:[RIG.x+.12,RIG.top+.07,RIG.z+.15],show:['titr']},
+  {txt:'Ойна ≤ 40 см',at:[-3.0,1.34,-.84],show:['hood']},
+  {txt:'Сўриш қувури',at:[-3.6,3.3,-1.32],show:['hood']},
+  {txt:'Концентрланган HCl буғи',at:[-3.6,1.12,-1.18],show:['hood']},
+  ...['spec','cent','cond','oven','fridge','gcms','icpms','inc','bal','micro'].map(id=>({txt:EQN[id][0].replace(/ \(.*\)$/,''),id,show:['inst']})),
+  ...['ext','coat','gogg','glov','shower'].map(id=>({txt:EQN[id][0].replace(/ \(.*\)$/,''),id,show:['safe']})),
+];
+const labelsEl=$('#labels');
+for(const L of LABELS){const d=document.createElement('div');d.className='chip'+(L.lock?' lock':'');d.innerHTML=`${L.txt}<b></b>`;L.el=d;L.b=d.querySelector('b');
+  if(L.id){const g=items[L.id];const bb=new THREE.Box3().setFromObject(g);L.v=V3((bb.min.x+bb.max.x)/2,bb.max.y+.05,(bb.min.z+bb.max.z)/2);}else L.v=V3(...L.at);
+  if(L.val)L.b.textContent=L.val;labelsEl.appendChild(d);}
+
+/* accent outlines on the focused zone */
+const outl={};
+for(const k in groups){const lm=new THREE.LineBasicMaterial({color:'#0f766e',transparent:true,opacity:0,clippingPlanes:k==='hood'?[hoodPlane]:[]});
+  for(const ms of groups[k]){ms.updateWorldMatrix(true,false);const eg=new THREE.EdgesGeometry(ms.geometry,28);eg.applyMatrix4(ms.matrixWorld);const ls=new THREE.LineSegments(eg,lm);ls.renderOrder=3;scene.add(ls);}outl[k]=lm;}
+
+/* charts */
+const xV=v=>40+v/TIT.max*252;
+function drawPH(c){
+  const y=p=>12+(14-p)/14*112;
+  let s='';for(const p of[0,4,7,10,14]){s+=`<line class="grid" x1="40" x2="292" y1="${y(p)}" y2="${y(p)}"/><text class="axis" x="34" y="${y(p)+3}" text-anchor="end">${p}</text>`;}
+  for(const v of[0,10,20,30])s+=`<text class="axis" x="${xV(v)}" y="138" text-anchor="middle">${v}</text>`;
+  s+=`<text class="xl" x="292" y="152" text-anchor="end">NaOH, мл</text>`;
+  let all='',done='';const n=TT.pH.length;for(let i=0;i<n;i+=2){const v=i*TIT.step,pt=`${xV(v).toFixed(1)},${y(TT.pH[i]).toFixed(1)} `;all+=pt;if(v<=c.v+1e-6)done+=pt;}
+  done+=`${xV(c.v).toFixed(1)},${y(c.pH).toFixed(1)}`;
+  s+=`<line class="eqv" x1="${xV(EQV)}" x2="${xV(EQV)}" y1="12" y2="124"/><text class="eql" x="${xV(EQV)-4}" y="22" text-anchor="end">эквивалент 20 мл</text>`;
+  s+=`<polyline class="ghost" points="${all}"/><polyline class="done" points="${done}"/>`;
+  s+=`<circle class="mk" cx="${xV(c.v)}" cy="${y(c.pH)}" r="4.5" style="fill:${c.pink?'#e0569b':'#f8faf9'}"/>`;
+  s+=`<text class="val" x="${Math.min(xV(c.v)+8,250)}" y="${y(c.pH)+(c.pH>10?14:-8)}">pH ${fmt(c.pH,2)}</text>`;
+  $('#chPH').innerHTML=s;
+}
+function drawEC(c){
+  const y=e=>10+(40000-e)/40000*82;
+  let s='';for(const e of[0,10000,20000,30000,40000]){s+=`<line class="grid" x1="40" x2="292" y1="${y(e)}" y2="${y(e)}"/><text class="axis" x="34" y="${y(e)+3}" text-anchor="end">${e/1000}</text>`;}
+  for(const v of[0,10,20,30])s+=`<text class="axis" x="${xV(v)}" y="104" text-anchor="middle">${v}</text>`;
+  let all='',done='';const n=TT.EC.length;for(let i=0;i<n;i+=2){const v=i*TIT.step,pt=`${xV(v).toFixed(1)},${y(TT.EC[i]).toFixed(1)} `;all+=pt;if(v<=c.v+1e-6)done+=pt;}
+  done+=`${xV(c.v).toFixed(1)},${y(c.EC).toFixed(1)}`;
+  s+=`<line class="eqv" x1="${xV(EQV)}" x2="${xV(EQV)}" y1="10" y2="92"/>`;
+  s+=`<polyline class="ghost" points="${all}"/><polyline class="done" points="${done}"/><circle class="mk" cx="${xV(c.v)}" cy="${y(c.EC)}" r="4"/>`;
+  s+=`<text class="val" x="${Math.min(xV(c.v)+8,232)}" y="${y(c.EC)-7}">${fmt(c.EC/1000,2)}</text>`;
+  s+=`<text class="xl" x="292" y="117" text-anchor="end">минимум эквивалент нуқтада</text>`;
+  $('#chEC').innerHTML=s;
+}
+const vv=(dt,dd,cls='')=>`<div><dt>${dt}</dt><dd class="${cls}">${dd}</dd></div>`;
+function cardFor(f,c,s){
+  const nU=R.filter(r=>r[2]==='u').length;
+  switch(f){
+    case'overview':return{k:'Умумий кўриниш',h:'Экомун лаборатория хонаси',p:'Платформадаги хонанинг ўзи: деворда реагентлар жавони, ўртада иш столи ва титрлаш, чапда тортиш шкафи ва хавфсизлик жиҳозлари, ўнгда таҳлил асбоблари.',
+      v:vv('Жавонда',`${R.length}<small>модда</small>`)+vv('Асбоблар',`${EQ_TOTAL}<small>дона</small>`)+vv('Университет учун',`${nU}<small>модда</small>`)};
+    case'shelf':return{k:'1 · Жавон',h:`Реагентлар жавони · ${R.length} модда`,p:`7 қатор × 28 шиша, 12 гуруҳ. Ҳар бир шишанинг ранги платформадаги модда рангидан. Мактаб босқичида ${nU} та университет моддаси кулранг ва 🔒 билан қулфланади.`,
+      v:vv('Ҳозирги босқич',s.stage==='u'?'Университет':'Мактаб')+vv('Очиқ',`${s.stage==='u'?R.length:R.length-nU}<small>модда</small>`)+vv('Қулфланган',`${s.stage==='u'?0:nU}<small>модда</small>`)};
+    case'titr':return{k:'2 · Иш столи',h:'Кислота–асос титрлаш',p:'Колбада 20 мл HCl 0,1 М ва фенолфталеин. Бюреткадан NaOH 0,1 М томчилаб қўшилади, магнит таёқча аралаштиради, pH-метр ҳар томчини ўлчайди. 20 мл да pH сакрайди ва эритма малина рангга киради.',
+      v:vv('NaOH',`${fmt(c.v,2)}<small>мл</small>`)+vv('pH',fmt(c.pH,2),c.pink?'pink':'')+vv('Ҳарорат',`${fmt(c.T,2)}<small>°C</small>`)+vv('Ўтказувчанлик',`${fmt(c.EC/1000,2)}<small>мСм/см</small>`)};
+    case'hood':return{k:'3 · Тортиш шкафи',h:EQN.hood[0],p:EQN.hood[3],sf:EQN.hood[4],v:''};
+    case'inst':return{k:'4 · Асбоблар',h:`Хонада ${EQ_TOTAL} та асбоб`,p:`10 тоифа: ўлчов, сув, тупроқ, ҳаво, умумий, шиша идишлар, иситиш, ажратиш, тест тўпламлари ва хавфсизлик. ${EQ_U} таси фақат университет босқичида. Расмда: спектрофотометр, центрифуга, ГХ-МС, ИСП-МС, инкубатор, музлатгич.`,
+      v:vv('Ўлчов асбоблари',`${EQC.find(e=>e[0]==='meas')[2]}<small>дона</small>`)+vv('Университет',`${EQ_U}<small>дона</small>`)+vv('Жами',`${EQ_TOTAL}<small>дона</small>`)};
+    case'safe':return{k:'5 · Хавфсизлик',h:'Аввал халат, кўзойнак ва қўлқоп',p:`Платформа ҳимоя кийимисиз моддани идишга қўйдирмайди. Хонада ${SAFE_LIST.length} та хавфсизлик жиҳози бор: ўт ўчиргич, кўз ювгич, авария души, биринчи ёрдам қутиси, чиқинди идишлари ва бошқалар.`,sf:EQN.ext[3],
+      v:vv('Хавфсизлик жиҳозлари',`${SAFE_LIST.length}<small>дона</small>`)+vv('Кўз ювиш',`15<small>дақиқа</small>`)};
+  }
+}
+let lastCard='';
+function updatePanels(c,s){
+  $('#vOut').textContent=fmt(s.v,2);
+  $('#r-ph').textContent=fmt(c.pH,2);$('#r-t').textContent=fmt(c.T,2);$('#r-ec').textContent=fmt(c.EC,0);$('#r-n').textContent=fmt(c.nNa,2);
+  const rc=$('#r-col');const atEq=Math.abs(c.v-EQV)<.03;rc.textContent=c.pink?'малина':atEq?'эквивалент':'рангсиз';rc.className='pill '+(c.pink?'pink':atEq?'eq':'clear');
+  drawPH(c);drawEC(c);setInv(s.focus==='inst'||s.focus==='safe'?'eq':'r');
+  const k=cardFor(s.focus,c,s),key=JSON.stringify(k);
+  if(key!==lastCard){lastCard=key;$('#cardK').textContent=k.k;$('#cardH').textContent=k.h;$('#cardP').textContent=k.p;const sf=$('#cardS');sf.hidden=!k.sf;sf.textContent=k.sf||'';$('#cardV').innerHTML=k.v;$('#cardV').hidden=!k.v;}
+}
+
+/* ================= 9. layout, view offset, quality ================= */
+let W=1,H=1,pr=Math.min(devicePixelRatio||1,1.75),tier=0;const FOV0=32;
+const off={x:0,y:0,tx:0,ty:0,ax:NaN,ay:NaN};
+function measureOffset(){if(!desk()){off.tx=off.ty=0;return;}const r=$('#stage').getBoundingClientRect(),L=$('#left').getBoundingClientRect(),Rr=$('#right').getBoundingClientRect(),C=$('#card').getBoundingClientRect();off.tx=((L.right+Rr.left)/2-r.left)-W/2;off.ty=(C.top-12-r.top)/2-H/2;}
+function applyOffset(){if(Math.abs(off.x-off.ax)<.3&&Math.abs(off.y-off.ay)<.3)return;off.ax=off.x;off.ay=off.y;const fw=W+2*Math.abs(off.x),fh=H+2*Math.abs(off.y);camera.aspect=fw/fh;camera.fov=2*THREE.MathUtils.radToDeg(Math.atan(Math.tan(THREE.MathUtils.degToRad(FOV0/2))*fh/H));camera.setViewOffset(fw,fh,off.x>0?0:2*Math.abs(off.x),off.y>0?0:2*Math.abs(off.y),W,H);camera.updateProjectionMatrix();}
+function layout(){const r=$('#stage').getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);renderer.setPixelRatio(pr);renderer.setSize(W,H,false);distScale=desk()?1:Math.pow(Math.max(1,1.25/(W/H)),.85);measureOffset();off.x=off.tx;off.y=off.ty;off.ax=NaN;applyOffset();ptsMat.uniforms.uScale.value=H*pr/(2*Math.tan(THREE.MathUtils.degToRad(FOV0/2)));}
+new ResizeObserver(layout).observe($('#stage'));addEventListener('resize',layout);layout();
+let fpsAcc=0,fpsN=0;
+function setTier(t){tier=t;if(t>=1){pr=1;sun.shadow.mapSize.set(1024,1024);sun.shadow.map?.dispose();sun.shadow.map=null;}if(t>=2){renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});}layout();}
+
+/* hover tooltips: bottles show the platform's name, formula and group */
+const tipEl=$('#tip'),ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let hoverAt=null;
+canvas.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'){return;}const r=canvas.getBoundingClientRect();hoverAt=[e.clientX-r.left,e.clientY-r.top];});
+canvas.addEventListener('pointerleave',()=>{hoverAt=null;tipEl.hidden=true;});
+const GN=Object.fromEntries(RG);
+const hoverables=[];scene.traverse(o=>{if(o.isMesh)hoverables.push(o);});
+function doHover(stage){
+  if(!hoverAt||!desk()){tipEl.hidden=true;return;}
+  mouse.set(hoverAt[0]/W*2-1,-(hoverAt[1]/H)*2+1);ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(hoverables,false).filter(h=>h.object.visible&&!(h.object.material&&h.object.material.transparent&&h.object.material.opacity<.4&&!h.object.userData.tip));
+  const h=hits[0];if(!h||!(h.object.isInstancedMesh?h.object.userData.map:h.object.userData.tip)){tipEl.hidden=true;return;}let html;
+  if(h.object.isInstancedMesh){const r=R[h.object.userData.map[h.instanceId]];const lock=stage==='m'&&r[2]==='u';html=`<b>${r[6]}</b><span>${r[5]} · ${GN[r[1]]}${lock?' · 🔒 университет':''}</span>`;}
+  else{const id=h.object.userData.tip;html=`<b>${nameOf(id)}</b>${EQN[id]?`<span>${EQN[id][3]}</span>`:''}`;}
+  tipEl.innerHTML=html;tipEl.hidden=false;tipEl.style.transform=`translate(${Math.min(hoverAt[0]+14,W-270)}px,${hoverAt[1]+14}px)`;
+}
+
+/* tour cursor */
+const cur=$('#cursor'),rip=$('#rip');
+function setCursor(on){cur.style.opacity=on?1:0;}
+function btnCenter(id){const el=document.getElementById(id);if(!el)return null;const r=el.getBoundingClientRect();if(!r.width)return null;return[r.left+r.width*.55,r.top+r.height*.6];}
+function updateCursor(t){
+  if(!tour.active||!desk()){setCursor(false);return;}
+  const i=beatIndex(t+1.2),b=SCRIPT[i];if(!b.btn){setCursor(false);return;}
+  let prevId=null;for(let k=i-1;k>=0;k--)if(SCRIPT[k].btn){prevId=SCRIPT[k].btn;break;}
+  const to=btnCenter(b.btn);if(!to){setCursor(false);return;}
+  const from=(prevId&&btnCenter(prevId))||[to[0]-140,to[1]-120];const u=ease((t-(b.t-1.2))/.95);
+  const x=lerp(from[0],to[0],u),y=lerp(from[1],to[1],u),press=t>b.t-.18&&t<b.t+.12;
+  cur.style.transform=`translate(${x-4}px,${y-2}px) scale(${press?.86:1})`;setCursor(true);
+  const rt=t-b.t;rip.style.opacity=rt>0&&rt<.6?String(1-rt/.6):'0';rip.style.transform=`scale(${rt>0&&rt<.6?.5+rt*2:.5})`;
+  const el=document.getElementById(b.btn);if(el)el.classList.toggle('press',press);
+}
+
+/* ================= 10. frame ================= */
+const tmpV=V3(0,0,0),leadLine=$('#leadLine'),leadDot=$('#leadDot');
+let panelT=0,prevFocus='',hoverT=0;
+const smooth=(c,t,dt,r=4)=>c+(t-c)*(1-Math.exp(-dt*r));
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.1,(now-last)/1000);last=now;clock+=dt;
+  if(tour.active){tour.t+=dt;if(tour.t>=TOUR_LEN){tour.t-=TOUR_LEN;tour.startPose=curPose();}}
+  else if(about.hidden&&!reduced&&clock-lastInput>25)startTour();
+  const s=stateNow();
+  if(s.focus!==prevFocus){prevFocus=s.focus;syncControls();}
+  /* burette flow: the reading follows the stopcock at up to 2 mL/s */
+  vPrev=vAct;vAct=s.v>vAct?Math.min(s.v,vAct+dt*(tour.active?6:Math.max(2,(s.v-vAct)*2.5))):s.v;
+  const c=chem(vAct);
+  /* drops: one per 0.05 mL delivered */
+  if(vAct>vPrev){dropAcc+=vAct-vPrev;while(dropAcc>=TIT.step){dropAcc-=TIT.step;const d=drops.find(d=>d.t<0);if(d)d.t=0;}}else dropAcc=0;
+  const surf=FL.y0+flH(c.Vtot);
+  for(const d of drops){if(d.t<0)continue;d.t+=dt;const y=BU.tip-.5*9.81*d.t*d.t;if(y<=surf){d.t=-1;d.m.visible=false;continue;}d.m.visible=true;d.m.position.set(RIG.x,y,RIG.z);}
+  setLiquid(c.Vtot,c.rgb,c.op);
+  const lvl=BU.z0-c.v*BU.mm;buLiq.scale.y=Math.max(.001,lvl-BU.bot);buLiq.position.y=(lvl+BU.bot)/2;
+  drawScreen(c.pH,c.T);
+  stirBar.rotation.y+=dt*2*Math.PI*4;
+  centLid.rot.rotation.y+=dt*2*Math.PI*(s.focus==='inst'?3:0);
+  ovenLamp.emissiveIntensity=.35+.35*Math.sin(clock*3);
+  specScr.color.setHSL(.53,.8,.55+.08*Math.sin(clock*1.7));
+
+  /* shelf stage: locked bottles fade to grey */
+  if(s.stage!==shownStage){shownStage=s.stage;vis.stageMix=0;}
+  if(vis.stageMix<1){vis.stageMix=Math.min(1,vis.stageMix+dt*2.5);paintBottles(s.stage,s.stage==='m'?ease(vis.stageMix):1);if(s.stage==='u'&&vis.stageMix<1)paintBottles('m',1-ease(vis.stageMix));}
+  /* hood cutaway and airflow */
+  vis.hoodCut=smooth(vis.hoodCut,s.focus==='hood'?1:0,dt,3.2);
+  hoodPlane.constant=vis.hoodCut<.002?1e4:lerp(-2.7,-2.9,ease(vis.hoodCut));
+  {const a=fumes.geometry.attributes,showF=.25+.75*ease(vis.hoodCut);
+   for(let i=0;i<NF;i++){const sd=fSeed[i],T=6,u=((clock+sd[0]*T)%T)/T;let x,y,z;
+     if(u<.45){const k=u/.45;x=HD.x+(sd[1]-.5)*.12*(1+k*2);y=1.0+k*.55;z=HD.z+.02-k*.3;}
+     else{const k=(u-.45)/.55;x=HD.x+(sd[1]-.5)*.3*(1-k);y=1.55+k*1.9;z=HD.z-.28+k*.16;}
+     a.position.setXYZ(i,x,y,z);a.size.setX(i,.05+.06*u);a.alpha.setX(i,.6*showF*Math.sin(Math.PI*u));}
+   a.position.needsUpdate=a.size.needsUpdate=a.alpha.needsUpdate=true;
+   const b=airIn.geometry.attributes,showA=ease(vis.hoodCut);
+   for(let i=0;i<NA;i++){const sd=fSeed[i],T=3,u=((clock+sd[2]*T)%T)/T;
+     b.position.setXYZ(i,HD.x+(sd[0]-.5)*1.3,HD.y0+.05+sd[1]*.33,HD.z+.75-u*.95);b.size.setX(i,.025);b.alpha.setX(i,.7*showA*Math.sin(Math.PI*u));}
+   b.position.needsUpdate=b.size.needsUpdate=b.alpha.needsUpdate=true;}
+  for(const k in outl){vis.acc[k]=smooth(vis.acc[k]||0,k===s.focus?1:0,dt,4);outl[k].opacity=vis.acc[k]*.85;}
+
+  /* camera */
+  if(tour.active)applyPose(tourPose(tour.t,tour.startPose));
+  else if(camTween){const u=(clock-camTween.t0)/camTween.dur;applyPose(blendPose(camTween.from,camTween.to,ease(u)));if(u>=1){controls.target.copy(camTween.to.t);camTween=null;controls.enabled=true;controls.update();}}
+  else{controls.update();curTarget.copy(controls.target);}
+  off.x=smooth(off.x,off.tx,dt,5);off.y=smooth(off.y,off.ty,dt,5);applyOffset();
+  renderer.render(scene,camera);
+
+  /* overlays */
+  for(const L of LABELS){let show=L.show.includes(s.focus)&&(!L.lock||s.stage==='m');
+    if(show){tmpV.copy(L.v).project(camera);show=tmpV.z<1&&Math.abs(tmpV.x)<1.05&&Math.abs(tmpV.y)<1.05;}
+    L.el.style.display=show?'':'none';if(!show)continue;
+    L.el.style.transform=`translate(${(tmpV.x+1)/2*W}px,${(1-tmpV.y)/2*H}px) translate(${L.left?'-100%':'-50%'},-100%)`;
+    if(L.lock)L.b.textContent=String(R.filter(r=>r[2]==='u').length);}
+  const fa=FOCI[s.focus].anchor;
+  if(fa&&desk()){tmpV.set(...fa).project(camera);const ax=(tmpV.x+1)/2*W,ay=(1-tmpV.y)/2*H;const cr=$('#card').getBoundingClientRect(),sr=$('#stage').getBoundingClientRect();
+    const cx=clamp(ax,cr.left-sr.left+24,cr.right-sr.left-24),cyy=cr.top-sr.top,ok=tmpV.z<1&&ay<cyy-20;
+    leadLine.setAttribute('x1',cx);leadLine.setAttribute('y1',cyy);leadLine.setAttribute('x2',ax);leadLine.setAttribute('y2',ay);leadLine.style.opacity=ok?1:0;leadDot.setAttribute('cx',ax);leadDot.setAttribute('cy',ay);leadDot.style.opacity=ok?1:0;}
+  else{leadLine.style.opacity=0;leadDot.style.opacity=0;}
+  updateCursor(tour.t);
+  if(clock-panelT>.1){panelT=clock;updatePanels(c,s);measureOffset();if(tour.active)syncControls();}
+  if(clock-hoverT>.08){hoverT=clock;doHover(s.stage);}
+  if(clock>2){fpsAcc+=dt;fpsN++;if(fpsAcc>3){const fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;if(fps<32&&tier<2&&!window.__td_noTier)setTier(tier+1);}}
+}
+syncControls();
+requestAnimationFrame(t=>{last=t;frame(t);});
+window.__td={seek(t){if(!tour.active)startTour();tour.t=t;},stats:()=>({tier,clock,v:vAct,stage:stateNow().stage})};
+
+/* Golo Lab hand-control hook: lets scenes/hand.js steer this scene */
+window.__golo={THREE,scene,camera,controls,canvas,FOCI,ORDER,setFocus,stopTour,
+  poke(){lastInput=clock;if(camTween){camTween=null;controls.target.copy(curTarget);}if(tour.active)stopTour();controls.enabled=true;},
+  get focus(){return live.focus;}};
+window.dispatchEvent(new Event('golo-ready'));
+</script>
+
+<script src="hand.js"></script>
+</body></html>
