@@ -1,8 +1,8 @@
 /* Жарвис Голо Лаб · қўл бошқаруви
    Adds hand-gesture control (MediaPipe Hands), an X-ray view and "go inside" to a 3D scene page.
    The scene exposes window.__golo = { THREE, scene, camera, controls, canvas, FOCI, ORDER, setFocus, poke, focus }.
-   Gestures: pinch + drag = rotate, two-hand pinch = zoom, fist = move, open palm swipe = next/previous view,
-   two palms apart = X-ray on, palms together = X-ray off, quick pinch over a button = press it. */
+   Gestures: move an open hand (or a pinch) = rotate, fist = move, two hands apart/together = zoom in (inside)/out,
+   quick pinch over a button = press it. */
 (() => {
   'use strict';
   const HANDS_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/';
@@ -112,7 +112,7 @@
     say(on ? 'Рентген ёқилди: ички қисмлар кўринади.' : 'Рентген ўчирилди.', 2200);
   }
   $('ghX').addEventListener('click', () => setXray(!xray));
-  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва қўлингизни кўрсатинг. Чимдиб суриш — айлантириш. Икки қўл билан чимдиш — яқинлаштириш. Мушт — силжитиш. Кафтни тез чапга/ўнгга суриш — кейинги кўриниш. Икки кафтни ёйиш — рентген, чапак — ўчириш. Тугма устида тез чимдиш — уни босиш.', 9000));
+  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни юргизсангиз — модел айланади. Мушт қилиб юргизсангиз — силжийди. Икки қўлни узоқлаштирсангиз — яқинлашади ва ичига киради, яқинлаштирсангиз — узоқлашади. Тугма устида тез чимдиш — уни босиш. Рентген ва ‹ › тугмалари ҳам бор.', 9000));
 
   /* ---------- camera + hands ---------- */
   let hands = null, handsReady = false, busy = false, stream = null, video = null, tracked = [], lastAt = 0, hid = 0, camOn = false;
@@ -140,6 +140,7 @@
     } catch (e) { say('Қўл таниш модели юкланмади. Интернетни текширинг.', 6000); }
   }
   function camStop() {
+    $('ghCam').querySelector('.lbl').textContent = 'Қўл бошқаруви';
     camOn = false; stream?.getTracks().forEach(t => t.stop()); stream = null; video?.remove(); video = null; tracked = [];
     $('ghCam').setAttribute('aria-pressed', 'false');
   }
@@ -154,8 +155,11 @@
       let best = null, bd = 1e9;
       tracked.forEach(t => { if (next.includes(t)) return; const d = d2(t.pts[0], pts[0]); if (d < bd) { bd = d; best = t; } });
       const h = (best && bd < Math.max(140, innerWidth * .15)) ? best : { id: ++hid, pts: pts.map(p => ({ ...p })), pinch: false, hist: [] };
+      const pv = h.palm ? { ...h.palm } : null, wasFist = h.fist;
       h.pts.forEach((p, i) => { p.x += (pts[i].x - p.x) * .6; p.y += (pts[i].y - p.y) * .6; });
       feat(h, lastAt); next.push(h);
+      // motion is accumulated per detection, so it is not lost when the scene renders slowly
+      if (pv && wasFist === h.fist) { h.ax = (h.ax || 0) + h.palm.x - pv.x; h.ay = (h.ay || 0) + h.palm.y - pv.y; } else { h.ax = 0; h.ay = 0; }
     });
     tracked = next;
   }
@@ -174,7 +178,7 @@
   const G = { z0: null, palms: [], big: 0, swipe: 0 }, flashes = [];
   function process(now) {
     if (!camOn) return;
-    if (now - lastAt > 500) tracked = [];
+    if (performance.now() - lastAt > 1000) tracked = [];
     const HS = tracked;
     for (const h of HS) if (h.edge) {
       h.edge = false;
@@ -182,30 +186,21 @@
       if (b && !(S && b === S.canvas)) { b.click(); h.ui = true; flashes.push({ x: h.pp.x, y: h.pp.y, t: now }); } else h.ui = false;
     }
     if (!ready()) return;
-    const pin = HS.filter(h => h.pinch && !h.ui);
-    if (pin.length >= 2) {
-      const d = d2(pin[0].pp, pin[1].pp);
+    /* Any visible hand steers: move an open hand (or pinch) to rotate, fist to move, two hands apart/together to zoom. */
+    const act = HS.filter(h => !h.ui);
+    if (act.length >= 2) {
+      const d = d2(act[0].palm, act[1].palm);
       if (!G.z0) G.z0 = { d, r: sph().radius };
-      if (G.z0.d / d < 1 && S.controls.minDistance > .02 && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12); // allow getting inside
-      dollyTo(G.z0.r * G.z0.d / d);
+      const r = G.z0.r * G.z0.d / Math.max(20, d);
+      if (r < sph().radius && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12); // allow going inside
+      dollyTo(r);
+      act.forEach(h => { h.ax = 0; h.ay = 0; });
     } else {
       G.z0 = null;
-      if (pin.length === 1) { const h = pin[0]; orbit(h.pp.x - h.last.x, h.pp.y - h.last.y); h.last = { ...h.pp }; }
-    }
-    HS.forEach(h => { if (!h.fist) h.lf = null; });
-    const fists = HS.filter(h => h.fist);
-    if (fists.length === 1 && !pin.length) { const h = fists[0]; if (h.lf) pan(h.palm.x - h.lf.x, h.palm.y - h.lf.y); h.lf = { ...h.palm }; }
-    if (HS.length === 2) {
-      const d = d2(HS[0].palm, HS[1].palm) / innerWidth;
-      G.palms.push({ t: now, d }); while (G.palms.length && now - G.palms[0].t > 700) G.palms.shift();
-      const o = G.palms[0], flat = HS.every(h => h.open || h.fist);
-      if (flat && o && d - o.d > .16 && d > .36 && !xray && now - G.big > 1200) { setXray(true); G.big = now; G.palms = []; }
-      if (d < .1 && xray && now - G.big > 1200) { setXray(false); G.big = now; G.palms = []; }
-    } else G.palms = [];
-    if (HS.length === 1 && HS[0].open && now - G.swipe > 900) {
-      const hs = HS[0].hist; if (hs.length > 3 && hs.every(p => p.open)) {
-        const dx = hs[hs.length - 1].x - hs[0].x, dt = (hs[hs.length - 1].t - hs[0].t) / 1000;
-        if (dt > .08 && Math.abs(dx) > innerWidth * .22) { stepFocus(dx > 0 ? 1 : -1); G.swipe = now; HS[0].hist = []; }
+      const h = act[0];
+      if (h && Math.abs(h.ax || 0) + Math.abs(h.ay || 0) > 2) {
+        const dx = h.ax, dy = h.ay; h.ax = 0; h.ay = 0;
+        if (h.fist) pan(dx, dy); else orbit(dx * 1.1, dy * 1.1);
       }
     }
   }
@@ -227,6 +222,7 @@
     requestAnimationFrame(loop);
     if (camOn && handsReady && !busy && video && video.readyState >= 2) { busy = true; hands.send({ image: video }).catch(() => { }).finally(() => { busy = false; }); }
     process(now); if (anim) anim(); draw(now);
+    if (camOn) { const n = tracked.length, lbl = $('ghCam').querySelector('.lbl'); const t = handsReady ? (n ? `Қўл: ${n} та кўринди` : 'Қўлни кўрсатинг') : 'Юкланмоқда…'; if (lbl.textContent !== t) lbl.textContent = t; }
   }
   requestAnimationFrame(loop);
   window.goloHand = { simulate: () => { camOn = true; }, orbit, pan, dollyTo, glide, setXray, stepFocus, feed: r => onHands(r), state: () => ({ camOn, xray, hands: tracked.length, radius: ready() ? sph().radius : null }) };
