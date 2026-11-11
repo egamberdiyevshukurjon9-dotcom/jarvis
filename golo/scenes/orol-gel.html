@@ -1,0 +1,346 @@
+<!doctype html><html lang="uz-Cyrl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orol-Gel гидрогель цехи</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Full-bleed 3D site plan of the hydrogel workshop; panels at the edges, stacked under the stage on phones */
+:root{
+  --bg:#e9e6df; --panel:rgba(249,248,245,.94); --ink:#1f2a2c; --muted:#5a6467; --line:#cfd2cc;
+  --accent:#2f7d8c; --accent-soft:#d5eaee; --warm:#c47a2c; --ok:#2f7a4c; --bad:#b4472f;
+  --sans:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0}
+#gl{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels{position:fixed;inset:0;pointer-events:none}
+.chip{position:absolute;left:0;top:0;white-space:nowrap;font:500 12px/1 var(--sans);background:rgba(249,248,245,.92);border:1px solid var(--line);border-radius:6px;padding:4px 7px;pointer-events:auto;cursor:pointer}
+.chip b{font:500 10.5px/1 var(--mono);color:var(--muted);margin-right:4px}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px rgba(30,40,40,.08);backdrop-filter:blur(6px)}
+#head{left:16px;top:16px;padding:12px 14px;max-width:330px}
+.eyebrow{font:500 11px/1.3 var(--mono);color:var(--muted);letter-spacing:.02em}
+h1{font-size:20px;margin:4px 0 2px}
+.sub{margin:0;color:var(--muted);font-size:13px}
+.tour{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
+.tour .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pl 1.6s infinite}
+@keyframes pl{50%{opacity:.25}}
+button{font:inherit}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12.5px;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+#left{left:16px;top:170px;width:300px;padding:12px 14px;max-height:calc(100vh - 260px);overflow:auto}
+.ph{font-size:13px;margin:0 0 8px;display:flex;justify-content:space-between}
+.frow{display:flex;align-items:baseline;gap:6px}.frow label{flex:1;font-weight:500}
+output{font:500 13px var(--mono)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sw{display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer}
+.sw input{accent-color:var(--accent);width:16px;height:16px}
+dl.ro{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:10px 0 0;font-size:12.5px}
+dl.ro dt{color:var(--muted)}dl.ro dd{margin:0;text-align:right;font-family:var(--mono)}
+#card{right:16px;top:112px;width:340px;padding:12px 14px;max-height:calc(100vh - 200px);overflow:auto}
+#card .ck{font:500 11px var(--mono);color:var(--accent)}
+#card h3{margin:4px 0 6px;font-size:16px}
+#card p{margin:0 0 8px}
+.cv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:6px 0 8px;font-size:12.5px}
+.cv dt{color:var(--muted)}.cv dd{margin:0;font-family:var(--mono);text-align:right}
+#card .doc{margin-top:4px}
+#dock{left:50%;transform:translateX(-50%);bottom:14px;padding:6px;display:flex;gap:4px;max-width:calc(100vw - 32px);overflow-x:auto}
+#dock button{white-space:nowrap;border:0;background:transparent;border-radius:8px;padding:7px 9px;font-size:12.5px;cursor:pointer;color:var(--ink)}
+#dock button[aria-pressed=true]{background:var(--accent);color:#fff}
+#nogl{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center}
+@media (max-width:720px){
+  body{overflow:auto}
+  #stage{position:relative;height:58vh}
+  #labels{position:absolute;height:58vh}
+  .panel{position:static;margin:10px 12px;max-width:none;width:auto!important;max-height:none!important;transform:none}
+  #dock{position:sticky;bottom:auto;top:0;z-index:5;margin:0;border-radius:0}
+  #head{margin-top:-6px}
+  .chip{font-size:11px;padding:3px 6px}
+  body{padding-bottom:70px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head><body>
+<div id="stage"><canvas id="gl" tabindex="0" aria-label="Orol-Gel гидрогель цехининг 3D модели. Сичқонча билан айлантиринг, ғилдирак билан яқинлаштиринг."></canvas></div>
+<div id="labels" aria-hidden="true"></div>
+<div id="nogl" hidden>Бу қурилмада WebGL ишламаяпти, шунинг учун 3D модел кўринмайди.</div>
+
+<header id="head" class="panel">
+  <div class="eyebrow">Мўйноқ тумани · 0,5 га · 500 т/йил</div>
+  <h1>Orol-Gel гидрогель цехи</h1>
+  <p class="sub">Тузга чидамли гидрогель — «Яшил белбоғ» кўчатлари учун</p>
+  <div class="tour" id="tourBox"><span class="dot"></span><span id="tourTxt">Авто саёҳат</span><button type="button" class="btn" id="tourBtn">Тўхтатиш</button></div>
+</header>
+
+<section id="left" class="panel" aria-label="Бошқарув">
+  <h2 class="ph">Бошқарув</h2>
+  <div class="frow"><label for="load">Иш юкламаси</label><output id="loadOut">100</output><span>%</span></div>
+  <input type="range" id="load" min="0" max="100" step="10" value="100">
+  <label class="sw"><input type="checkbox" id="roof"><span>Томни ёпиш</span></label>
+  <label class="sw"><input type="checkbox" id="flow" checked><span>Маҳсулот оқимини кўрсатиш</span></label>
+  <label class="sw"><input type="checkbox" id="plume" checked><span>Мўрилардан чиқишни кўрсатиш</span></label>
+  <dl class="ro">
+    <dt>Маҳсулот</dt><dd><b id="r-prod">500</b> т/йил</dd>
+    <dt>Кўчат майдони</dt><dd><b id="r-ha">33 300</b> га/йил</dd>
+    <dt>Табиий газ</dt><dd><b id="r-gas">122,5</b> минг м³</dd>
+    <dt>Электр</dt><dd><b id="r-el">300</b> МВт·с</dd>
+    <dt>Атмосферага</dt><dd><b id="r-em">1,704</b> т/йил</dd>
+    <dt>Сув олиш</dt><dd><b id="r-w">3 455</b> м³/йил</dd>
+    <dt>Чиқиндилар</dt><dd><b id="r-was">9,72</b> т/йил</dd>
+    <dt>CO₂ изи</dt><dd><b id="r-co2">380</b> т/йил</dd>
+  </dl>
+</section>
+
+<section id="card" class="panel" aria-live="polite">
+  <div class="ck" id="cardK">Умумий кўриниш</div>
+  <h3 id="cardH"></h3>
+  <p id="cardP"></p>
+  <dl class="cv" id="cardV"></dl>
+  <button type="button" class="btn doc" id="cardDoc">📄 Ҳужжатда ўқиш</button>
+</section>
+
+<nav id="dock" class="panel" aria-label="Цех қисмлари"></nav>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const $=s=>document.querySelector(s), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), ease=u=>u<0?0:u>1?1:u*u*(3-2*u);
+const fmt=(v,d=0)=>Number(v).toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d}).replace(/ /g,' ');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const canvas=$('#gl');
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});}catch(e){$('#nogl').hidden=false;throw e;}
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xe9e6df);scene.fog=new THREE.Fog(0xe9e6df,170,330);
+const camera=new THREE.PerspectiveCamera(45,1,.1,800);
+scene.add(new THREE.HemisphereLight(0xf6f4ee,0xb9ab92,1.05));
+const sun=new THREE.DirectionalLight(0xfff3e0,1.6);sun.position.set(-60,90,40);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-75,right:75,top:60,bottom:-60,near:10,far:250});scene.add(sun);
+
+/* ---------- materials ---------- */
+const M=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.8,metalness:.05,...o});
+const mat={ground:M(0xdcd3c0),salt:M(0xf1ede4),conc:M(0xc9c6bf),wall:M(0xeeece6),roof:M(0x8fa3a6,{transparent:true,opacity:1}),
+  steel:M(0xb9c2c6,{metalness:.5,roughness:.4}),dark:M(0x4b5558),tankAA:M(0xe7e2d2),tankNa:M(0xd8dee2),bund:M(0xa9b4a8),
+  yellow:M(0xe0b23a),blue:M(0x3f86b0),green:M(0x5d8c4a),trunk:M(0x7a5a3c),solar:M(0x23415e,{metalness:.3,roughness:.35}),
+  gel:M(0xe6b45c,{roughness:.5}),liquid:M(0xbfe3ef,{roughness:.2}),waste:M(0x8c7b62),red:M(0xb4472f),purple:M(0x7b5ea7)};
+const box=(w,h,d,m,x,y,z,parent=scene)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;parent.add(o);return o;};
+const cyl=(r,h,m,x,y,z,seg=24,parent=scene)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;parent.add(o);return o;};
+
+/* ---------- site: 100 × 50 m = 0,5 га; north is −z ---------- */
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(400,400),mat.ground);gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);
+const pad=new THREE.Mesh(new THREE.PlaneGeometry(100,50),mat.salt);pad.rotation.x=-Math.PI/2;pad.position.y=.02;pad.receiveShadow=true;scene.add(pad);
+{ // dashed boundary
+  const pts=[[-50,-25],[50,-25],[50,25],[-50,25],[-50,-25]].map(([x,z])=>new THREE.Vector3(x,.08,z));
+  const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0x1f2a2c,dashSize:2,gapSize:1.4}));ln.computeLineDistances();scene.add(ln);
+  const arrow=new THREE.Mesh(new THREE.ConeGeometry(1.4,4,3),mat.dark);arrow.rotation.x=-Math.PI/2;arrow.position.set(56,.2,-28);scene.add(arrow);
+}
+// tree belt (ихота дарахтзори, ~2 000 м²) around the fence
+const trees=new THREE.Group();scene.add(trees);
+{
+  const crown=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1.5,0),mat.green,140),trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.15,.2,1.6,5),mat.trunk,140);
+  const d=new THREE.Object3D();let i=0;const put=(x,z)=>{const s=.7+Math.random()*.6;d.position.set(x,.8*s,z);d.scale.setScalar(s);d.rotation.set(0,Math.random()*6,0);d.updateMatrix();trunk.setMatrixAt(i,d.matrix);d.position.y=1.6*s+1.1*s;d.updateMatrix();crown.setMatrixAt(i,d.matrix);i++;};
+  for(let x=-52;x<=52&&i<140;x+=4.4){put(x,-28);put(x,28);}
+  for(let z=-22;z<=22&&i<140;z+=4.4){put(-53,z);put(53,z);}
+  crown.count=trunk.count=i;crown.castShadow=trunk.castShadow=true;trees.add(crown,trunk);
+}
+
+/* ---------- buildings ---------- */
+// raw material warehouse (NW) and finished goods warehouse (NE) with the 50 kW solar array on their roofs
+box(16,7,12,mat.wall,-38,3.5,-12);box(16.4,.4,12.4,mat.roof,-38,7.2,-12);
+box(14,7,12,mat.wall,38,3.5,-12);box(14.4,.4,12.4,mat.roof,38,7.2,-12);
+const solar=new THREE.Group();scene.add(solar);
+for(const [cx,w] of [[-38,14],[38,12]])for(let r=0;r<4;r++)for(let c=0;c<Math.floor(w/2.1);c++){const p=box(1.9,.08,2.4,mat.solar,cx-w/2+1.05+c*2.1,8.1,-16.2+r*2.8,solar);p.rotation.x=-.45;}
+// admin and domestic building (SE)
+box(14,4,9,mat.wall,38,2,13);box(14.4,.35,9.4,mat.roof,38,4.15,13);
+for(let k=0;k<5;k++)box(1.4,1.2,.1,mat.blue,32+k*3,2.4,8.45);
+
+// production building (centre): walls + removable roof so the line is visible inside
+const prod=new THREE.Group();scene.add(prod);
+const PW=44,PD=20,PH=9,PX=0,PZ=-4;
+box(PW,PH,.4,mat.wall,PX,PH/2,PZ-PD/2,prod);
+const front=box(PW,2.2,.4,mat.wall,PX,1.1,PZ+PD/2,prod); // low front wall keeps the inside visible
+box(.4,PH,PD,mat.wall,PX-PW/2,PH/2,PZ,prod);box(.4,PH,PD,mat.wall,PX+PW/2,PH/2,PZ,prod);
+const floor=box(PW,.2,PD,mat.conc,PX,.1,PZ,prod);
+const roof=box(PW+.6,.45,PD+.6,mat.roof,PX,PH+.2,PZ,prod);roof.visible=false;
+const frontUp=box(PW,PH-2.2,.4,mat.wall,PX,2.2+(PH-2.2)/2,PZ+PD/2,prod);frontUp.visible=false;
+
+/* ---------- process line inside (stages 2–8 of ЗВОС 3.1) ---------- */
+const LZ=PZ+1;
+// 2. CMC + bentonite dispersion mixer, 3 m³
+cyl(1.1,2.2,mat.steel,-17,1.4,LZ);cyl(.12,1.2,mat.dark,-17,3.1,LZ);box(1.2,.6,.6,mat.dark,-17,3.8,LZ);
+box(2.2,1.2,1.6,mat.wall,-17,.8,LZ-4);  // powder dosing station (aspirated)
+// 3. neutralisation reactor with cooling jacket, 3 m³
+cyl(1.05,2.4,mat.steel,-11,1.5,LZ);cyl(1.2,1.4,mat.blue,-11,1.3,LZ);cyl(.12,1.2,mat.dark,-11,3.3,LZ);
+// 4. belt polymerisation reactor 60–70 °C, nitrogen
+box(9,.9,2,mat.steel,-3.5,1.6,LZ);box(9,.5,2.2,mat.dark,-3.5,.6,LZ);cyl(.5,2.6,mat.blue,-3.5,1.6,LZ-3.2,16);
+// 5. gel cutter / extruder
+box(2,1.6,1.6,mat.dark,3.2,1.2,LZ);cyl(.35,2,mat.steel,3.2,1.4,LZ+1.2,12).rotation.x=Math.PI/2;
+// 6. belt dryer 120–150 °C (gas + solar air collectors), cyclone, stack 0001
+box(10,2.4,2.6,mat.steel,10.5,1.6,LZ);box(10,.3,2.8,mat.red,10.5,2.95,LZ);
+const cyc=cyl(.8,2.6,mat.steel,14,4,LZ-5.5);const cone=new THREE.Mesh(new THREE.ConeGeometry(.8,1.6,20),mat.steel);cone.rotation.x=Math.PI;cone.position.set(14,2,LZ-5.5);scene.add(cone);
+box(.35,.35,5.5,mat.steel,14,5.4,LZ-2.8);
+const st1=cyl(.25,15,mat.dark,10,7.5,PZ-PD/2-1.2,16);cyl(.35,.5,mat.red,10,14.5,PZ-PD/2-1.2,16);box(4.6,.3,.3,mat.steel,12,5.4,LZ-5.5);
+// 7. roll mill + vibrating sieve, bag filter and stack 0002
+box(1.8,1.8,1.6,mat.dark,17.6,1.1,LZ);box(2.2,.8,1.8,mat.steel,17.6,2.4,LZ+2.2);
+const bag=box(2,3.2,2,mat.steel,18,2.6,PZ-PD/2-2.4);const st2=cyl(.2,10,mat.dark,20,5,PZ-PD/2-2.4,16);cyl(.28,.4,mat.red,20,9.8,PZ-PD/2-2.4,16);
+box(.3,.3,6,mat.steel,17.8,4.6,LZ-3.5);
+// 8. packing: 25 kg bags and big-bags
+for(let k=0;k<6;k++)box(.6,.25,.9,mat.gel,19.2+(k%3)*.7,.35+Math.floor(k/3)*.28,LZ+5.5);
+for(let k=0;k<3;k++)box(1,1,1,mat.salt,12.5+k*1.3,.7,LZ+5.6);
+// gas line (yellow) from the north fence to the dryer
+box(.25,.25,13,mat.yellow,6,4.2,PZ-PD/2-6.5);box(.25,4,.25,mat.yellow,6,2.2,PZ-PD/2-13);
+
+/* ---------- AA and NaOH tanks in a 110 % bund + breathing valve 6001 (SW) ---------- */
+const tanks=new THREE.Group();scene.add(tanks);
+box(14,.9,9,mat.bund,-38,.45,13,tanks);box(13,.1,8,mat.conc,-38,.55,13,tanks);
+const aa=cyl(1.6,2.8,mat.tankAA,-41.5,2,13,28,tanks);const na=cyl(1.6,2.8,mat.tankNa,-34.5,2,13,28,tanks);
+cyl(.06,3,mat.dark,-41.5,4.7,13,8,tanks);const v6001=cyl(.15,.3,mat.red,-41.5,6.2,13,10,tanks);
+box(1.4,.6,.6,mat.blue,-41.5,1.6,10.8,tanks); // heater/thermostat on the AA tank
+
+/* ---------- water: settling tank, sealed septic 20 m³, inspection well K-1 ---------- */
+box(4,1.4,2.6,mat.conc,10,.7,15);box(3.6,.2,2.2,mat.liquid,10,1.35,15);
+box(5,2,3,mat.conc,10,1,19.5);box(.6,.6,.6,mat.purple,10,2.3,19.5);
+cyl(.6,1,mat.purple,10,.5,23.4,16);
+box(.25,.25,4,mat.purple,10,.3,17.3);
+
+/* ---------- waste area 20 м², concrete, roofed ---------- */
+box(5,.2,4,mat.conc,-20,.1,16);box(5.4,.2,4.4,mat.roof,-20,3,16);for(const [x,z] of [[-22.3,14.1],[-17.7,14.1],[-22.3,17.9],[-17.7,17.9]])cyl(.08,2.8,mat.dark,x,1.5,z,6);
+cyl(.45,1,mat.dark,-21.6,.7,16,12);cyl(.45,1,mat.dark,-20.5,.7,16,12);box(1.2,1,1,mat.waste,-18.6,.7,16);
+
+/* ---------- product flow and stack plumes ---------- */
+const PATH=[[-17,LZ-4],[-17,LZ],[-11,LZ],[-8,LZ],[1,LZ],[3.2,LZ],[5.5,LZ],[15.5,LZ],[17.6,LZ],[17.6,LZ+2.2],[19.5,LZ+5.5]].map(([x,z])=>new THREE.Vector3(x,3.4,z));
+const SEG=[0];for(let i=1;i<PATH.length;i++)SEG.push(SEG[i-1]+PATH[i].distanceTo(PATH[i-1]));
+function pathAt(u,out){const d=clamp(u,0,1)*SEG[SEG.length-1];let i=1;while(i<SEG.length-1&&SEG[i]<d)i++;const f=(d-SEG[i-1])/(SEG[i]-SEG[i-1]||1);return out.lerpVectors(PATH[i-1],PATH[i],f);}
+const NF=70,flow=new THREE.InstancedMesh(new THREE.SphereGeometry(.22,10,8),new THREE.MeshStandardMaterial({roughness:.5}),NF);scene.add(flow);
+const fCol=[new THREE.Color(0xd9eef5),new THREE.Color(0xbfe3ef),new THREE.Color(0xe6b45c),new THREE.Color(0xf2d6a0)];
+const NP=80,plume=new THREE.InstancedMesh(new THREE.SphereGeometry(.6,10,8),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.45,depthWrite:false}),NP);scene.add(plume);
+const ptop1=new THREE.Vector3(10,15,PZ-PD/2-1.2),ptop2=new THREE.Vector3(20,10,PZ-PD/2-2.4),ptop3=new THREE.Vector3(-41.5,6.4,13);
+
+/* ---------- foci (texts from ЗВОС / ЗЭП) ---------- */
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const FOCI={
+  overview:{label:'Умумий кўриниш',k:'Умумий кўриниш',h:'Orol-Gel цехи · 0,5 га',p:'Хомашё омбори, ишлаб чиқариш биноси, тайёр маҳсулот омбори, AA ва NaOH сиғимлари, тиндиргич ва септик, чиқинди майдончаси, маъмурий бино ва атрофда ихота дарахтзори. Шимол — ўнг томондаги учбурчак йўналиши.',
+    v:[['Қувват','500 т/йил'],['Ходимлар','25 киши'],['Иш режими','4 000 соат/йил'],['Атмосфера','1,704 т/йил'],['Чиқиндилар','9,72 т/йил']],a:V(0,4,0),pose:[V(62,78,104),V(4,0,2)],doc:'gel-sum'},
+  raw:{label:'Хомашё омбори',k:'1 · Хомашё',h:'Хомашёни қабул қилиш ва сақлаш',p:'Қопли хомашё: КМЦ (пахта целлюлозаси), Навбаҳор бентонити, калий гумат, AMPS, MBA, KPS. Ёпиқ омбор чангли-тузли бўрондан ҳимоя қилади. Томда қуёш панеллари.',
+    v:[['AMPS','87,2 т/йил'],['Na-КМЦ','33,5 т/йил'],['Бентонит','33,5 т/йил'],['Калий гумат','8,4 т/йил'],['MBA / KPS','0,8 / 3,9 т/йил']],a:V(-38,8,-12),pose:[V(-14,26,22),V(-38,3,-12)],doc:'gel-zvos'},
+  tanks:{label:'AA ва NaOH сиғимлари',k:'1 · Суюқ хомашё · 6001',h:'AA 20 м³ (иситиладиган) ва NaOH 20 м³',p:'Сиғимлар 110% ҳажмли герметик обваловка ичида, майдон кислотага чидамли қопламада. AA 15–25 °C да сақланади: +13 °C да музлайди, ингибитор (MEHQ) ҳар ой текширилади. Нафас клапанида буғ қайтаргич — манба 6001 (4 м).',
+    v:[['Акрил кислота','301,8 т/йил'],['NaOH (100%)','142,5 т/йил'],['6001 чиқариш','0,02 т/йил AA'],['Ҳарорат','15–25 °C']],a:V(-38,6,13),pose:[V(-20,16,32),V(-38,2,13)],doc:'gel-zvos'},
+  mix:{label:'Дисперсия',k:'2 · Дисперсия',h:'КМЦ ва бентонит дисперсияси · 3 м³',p:'Кукун дозалаш станциясидан аралаштиргичли идишга берилади. Дозалашдаги чанг аспирация орқали енгли фильтрга (0002) кетади.',
+    v:[['Идиш','3 м³'],['Чанг','→ 0002, η 99%']],a:V(-17,4,LZ),pose:[V(-12,12,LZ+16),V(-15,1.5,LZ-1)],doc:'gel-zvos'},
+  neutral:{label:'Нейтраллаш',k:'3 · Нейтраллаш',h:'Мономерларни нейтраллаш реактори · 3 м³',p:'Акрил кислота ва AMPS NaOH билан нейтралланади. Жараён экзотермик, шунинг учун реактор совутиш кожухли ва ёпиқ. Совутиш суви ёпиқ айланмада.',
+    v:[['Реактор','3 м³'],['Совутиш','ёпиқ айланма, 1,0 м³/сут тўлдириш']],a:V(-11,4,LZ),pose:[V(-6,11,LZ+14),V(-11,1.5,LZ)],doc:'gel-zvos'},
+  poly:{label:'Полимерлаш',k:'4 · Полимерлаш',h:'Лентали полимерлаш реактори',p:'Сувли эритмада радикал полимерлаш, 60–70 °C, азот муҳитида; органик эритувчи ишлатилмайди. Тикувчи агент MBA, инициатор KPS. Маҳсулот — КМЦ-g-поли(AA-co-AMPS)/бентонит композити.',
+    v:[['Ҳарорат','60–70 °C'],['Муҳит','азот'],['Сув (реакция)','1 090 м³/йил']],a:V(-3.5,3,LZ),pose:[V(2,10,LZ+14),V(-3.5,1.2,LZ)],doc:'gel-zvos'},
+  cut:{label:'Гель-кесгич',k:'5 · Майдалаш',h:'Гель-кесгич (экструдер)',p:'Тайёр гел бўлакларга кесилади, шунда қуритгичда тез ва бир текис қурийди.',v:[['Ускуна','экструдер']],a:V(3.2,3,LZ),pose:[V(7,9,LZ+12),V(3.2,1.2,LZ)],doc:'gel-zvos'},
+  dryer:{label:'Қуритгич · 0001',k:'6 · Қуритиш · манба 0001',h:'Лентали қуритгич 120–150 °C',p:'Иссиқлик табиий газдан ва қуёш ҳаво коллекторларидан. Циклон маҳсулотни қайтаради. Мўри 0001: H 15 м, D 0,5 м, 1,39 м³/с, 80 °C. Асосий атмосфера манбаи.',
+    v:[['Газ','122,5 минг м³/йил'],['CO','1,026 т/йил'],['NO₂ / NO','0,263 / 0,043 т/йил'],['Акрил кислота','0,302 т/йил'],['См/ПДК','≤ 0,054']],a:V(10.5,4,LZ),pose:[V(22,20,LZ+20),V(10.5,4,LZ-4)],doc:'gel-zep'},
+  mill:{label:'Майдалаш · 0002',k:'7 · Майдалаш, элаш · манба 0002',h:'Валли тегирмон, тебранма элак, енгли фильтр',p:'Маҳсулотнинг 1% и чангга айланади (5,0 т/йил). Енгли фильтр 99% ушлайди, ушланган 4,95 т/йил маҳсулотга қайтади. Мўри 0002: H 10 м, D 0,4 м, 2,0 м³/с.',
+    v:[['Чанг чиқиши','0,050 т/йил'],['Фильтр','η = 99%'],['Шовқин','тегирмон 85 дБА бино ичида']],a:V(18,4,LZ-2),pose:[V(30,14,LZ+14),V(18,2.5,LZ-3)],doc:'gel-zep'},
+  pack:{label:'Қадоқлаш',k:'8 · Қадоқлаш',h:'25 кг қоплар ва биг-беглар',p:'Тайёр гидрогель тайёр маҳсулот омборига боради. Ҳар партияда қолдиқ мономер ≤ 500 мг/кг текширилади. 1 гектарга 15 кг — йилига ~33 000 га кўчатзор.',
+    v:[['Маҳсулот','500 т/йил'],['Қолдиқ мономер','≤ 500 мг/кг'],['Кўчатга','10–20 г']],a:V(17,2,LZ+5.5),pose:[V(26,10,LZ+18),V(17,1,LZ+5)],doc:'gel-zvos'},
+  water:{label:'Тиндиргич · септик',k:'Сув · ПДС',h:'Тиндиргич, 20 м³ септик, К-1 қудуғи',p:'Ювиш суви тиндирилади ва pH 6,5–9,0 гача нейтралланади, 80% и қайта ишлатилади. Оқова канализацияга ёки герметик септикка, кейин ассенизация билан олиб кетилади. Назорат — К-1 қудуғи, ойда 1 марта.',
+    v:[['Сув олиш','3 455 м³/йил'],['Қайтмас','2 840 м³/йил'],['Оқова','615 м³/йил'],['Септик','20 м³']],a:V(10,3,18),pose:[V(26,14,34),V(10,1,18)],doc:'gel-zep'},
+  waste:{label:'Чиқинди майдончаси',k:'Чиқиндилар · ПДО',h:'Чиқинди майдончаси 20 м²',p:'Бетонланган, усти ёпиқ. 9 турдаги чиқинди, жами 9,72 т/йил; 8,05 т технологияга қайтади ёки иккиламчи хомашё сифатида топширилади. Люминесцент лампалар (I синф) алоҳида ёпиқ идишда.',
+    v:[['ТБО','1,25 т/йил'],['Брак полимер','5,0 т/йил'],['Тиндиргич чўкмаси','2,0 т/йил'],['Ишлатилган мой','0,36 т/йил']],a:V(-20,4,16),pose:[V(-8,12,32),V(-20,1,16)],doc:'gel-zep'},
+  solar:{label:'Қуёш панели',k:'Энергия',h:'50 кВт қуёш панели',p:'Омборлар томида. Йилига ~75 МВт·с электр беради ва 37 т CO₂ тежайди. LED ёритиш ва частота ўзгарткичлар ҳам кам углеродли чоралар.',
+    v:[['Қувват','50 кВт'],['Ишлаб чиқариш','~75 МВт·с/йил'],['CO₂ тежаш','37 т/йил']],a:V(38,9,-12),pose:[V(60,30,8),V(38,6,-12)],doc:'gel-zvos'},
+  green:{label:'Ихота дарахтзори',k:'Атроф',h:'Ихота дарахтзори · 2 000 м²',p:'Цех атрофида гидрогель билан экилган дарахтлар чангни ушлайди ва маҳсулотни намойиш қилади. Томчилатиб суғориш: 1 200 м³/йил.',
+    v:[['Майдон','2 000 м²'],['Суғориш','1 200 м³/йил']],a:V(-50,3,-28),pose:[V(-80,24,-50),V(-40,0,-20)],doc:'gel-zvos'},
+  admin:{label:'Маъмурий бино',k:'Ходимлар',h:'Маъмурий-маиший бино',p:'25 киши: 20 ишчи ва 5 ИТХ, 2 смена × 8 соат. Душ, дам олиш хонаси; ошхона йўқ. Хўжалик-ичимлик суви 140, душ 375 м³/йил.',
+    v:[['Ходимлар','25 киши'],['Иш куни','250 кун/йил'],['Шовқин 100 м да','32 дБА']],a:V(38,5,13),pose:[V(56,14,34),V(38,2,13)],doc:'gel-zvos'}
+};
+const ORDER=['overview','raw','tanks','mix','neutral','poly','cut','dryer','mill','pack','water','waste','solar','green','admin'];
+
+/* ---------- labels + dock ---------- */
+const chips={};
+for(const k of ORDER){if(k==='overview')continue;const c=document.createElement('div');c.className='chip';c.innerHTML=`<b>${ORDER.indexOf(k)}</b>`;c.append(FOCI[k].label);c.addEventListener('click',()=>{poke();setFocus(k);});$('#labels').appendChild(c);chips[k]=c;}
+for(const k of ORDER){const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=FOCI[k].label;b.addEventListener('click',()=>{poke();setFocus(k);});$('#dock').appendChild(b);}
+
+/* ---------- camera, controls, tour ---------- */
+const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=260;controls.maxPolarAngle=Math.PI*.495;
+const curTarget=new THREE.Vector3();
+const live={focus:'overview',load:100,flow:true,plume:true};
+const tour={active:!reduced,i:0,t:0};
+let camTween=null,lastInput=-1e9,clock=0;
+function applyPose(p,t){camera.position.copy(p);camera.lookAt(t);curTarget.copy(t);}
+applyPose(...FOCI.overview.pose);controls.target.copy(FOCI.overview.pose[1]);
+function setFocus(k){if(!FOCI[k])return;live.focus=k;camTween={fp:camera.position.clone(),ft:curTarget.clone(),tp:FOCI[k].pose[0].clone(),tt:FOCI[k].pose[1].clone(),t0:clock,dur:1.6};controls.enabled=false;showCard(k);}
+function stopTour(){if(!tour.active)return;tour.active=false;$('#tourTxt').textContent='Саёҳат тўхтади';$('#tourBtn').textContent='Бошлаш';controls.enabled=!camTween;}
+function startTour(){tour.active=true;tour.t=0;tour.i=Math.max(0,ORDER.indexOf(live.focus));$('#tourTxt').textContent='Авто саёҳат';$('#tourBtn').textContent='Тўхтатиш';setFocus(ORDER[tour.i]);}
+function poke(){lastInput=clock;if(tour.active)stopTour();}
+$('#tourBtn').addEventListener('click',()=>tour.active?(stopTour(),lastInput=clock):startTour());
+['pointerdown','wheel','keydown','touchstart'].forEach(e=>canvas.addEventListener(e,()=>{poke();if(camTween){camTween=null;controls.target.copy(curTarget);controls.enabled=true;}},{passive:true}));
+
+function showCard(k){
+  const f=FOCI[k];$('#cardK').textContent=f.k;$('#cardH').textContent=f.h;$('#cardP').textContent=f.p;
+  $('#cardV').innerHTML='';for(const [a,b] of f.v){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=a;dd.textContent=b;$('#cardV').append(dt,dd);}
+  $('#cardDoc').dataset.doc=f.doc||'gel-sum';
+  document.querySelectorAll('#dock button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k?'true':'false'));
+  for(const c in chips)chips[c].classList.toggle('on',c===k);
+}
+$('#cardDoc').addEventListener('click',e=>{poke();window.goloDocs?.open(e.currentTarget.dataset.doc);});
+showCard('overview');
+
+/* ---------- controls → live numbers (scaled from the design point, ЗВОС 3.2–3.7) ---------- */
+function updateNumbers(){
+  const L=live.load/100;$('#loadOut').textContent=live.load;
+  $('#r-prod').textContent=fmt(500*L);$('#r-ha').textContent=fmt(Math.round(500*L*1000/15/100)*100);
+  $('#r-gas').textContent=fmt(122.5*L,1);$('#r-el').textContent=fmt(300*L);
+  $('#r-em').textContent=fmt(1.704*L,3);$('#r-w').textContent=fmt(Math.round(2365+1090*L));
+  $('#r-was').textContent=fmt(1.25+.004+.05+(9.72-1.304)*L,2);$('#r-co2').textContent=fmt(380*L);
+}
+$('#load').addEventListener('input',e=>{poke();live.load=+e.target.value;updateNumbers();});
+$('#roof').addEventListener('change',e=>{poke();roof.visible=frontUp.visible=e.target.checked;});
+$('#flow').addEventListener('change',e=>{live.flow=e.target.checked;});
+$('#plume').addEventListener('change',e=>{live.plume=e.target.checked;});
+updateNumbers();
+
+/* ---------- resize + loop ---------- */
+function resize(){const r=canvas.getBoundingClientRect(),w=Math.max(1,r.width),h=Math.max(1,r.height);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();
+const dObj=new THREE.Object3D(),tmp=new THREE.Vector3();
+let last=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt;
+  const L=live.load/100;
+  if(tour.active){tour.t+=dt;if(!camTween&&tour.t>6.5){tour.t=0;tour.i=(tour.i+1)%ORDER.length;setFocus(ORDER[tour.i]);}}
+  else if(clock-lastInput>25&&!reduced)startTour();
+  if(camTween){const u=(clock-camTween.t0)/camTween.dur,e=ease(u);applyPose(tmp.lerpVectors(camTween.fp,camTween.tp,e).clone(),camTween.ft.clone().lerp(camTween.tt,e));
+    if(u>=1){controls.target.copy(camTween.tt);camTween=null;controls.enabled=true;controls.update();}}
+  else{controls.update();curTarget.copy(controls.target);}
+  // product flow
+  flow.visible=live.flow&&L>0;
+  if(flow.visible)for(let i=0;i<NF;i++){const u=((i/NF)+clock*.035*L)%1;pathAt(u,dObj.position);dObj.scale.setScalar(1);dObj.updateMatrix();flow.setMatrixAt(i,dObj.matrix);
+    flow.setColorAt(i,u<.2?fCol[0]:u<.32?fCol[1]:u<.75?fCol[2]:fCol[3]);}
+  flow.instanceMatrix.needsUpdate=true;if(flow.instanceColor)flow.instanceColor.needsUpdate=true;
+  // plumes: 0001 (dryer, steam), 0002 (filtered air), 6001 (small)
+  plume.visible=live.plume&&L>0;
+  if(plume.visible)for(let i=0;i<NP;i++){const src=i<50?ptop1:i<72?ptop2:ptop3,n=i<50?50:i<72?22:8,k=i<50?i:i<72?i-50:i-72,u=((k/n)+clock*.12)%1;
+    dObj.position.set(src.x+u*9+Math.sin(k*3.1+clock)*.4,src.y+u*(i<50?8:4),src.z+u*3);dObj.scale.setScalar((i<50?.6:.3)+u*(i<50?2.2:1)*L);dObj.updateMatrix();plume.setMatrixAt(i,dObj.matrix);}
+  plume.instanceMatrix.needsUpdate=true;
+  renderer.render(scene,camera);
+  // labels
+  const r=canvas.getBoundingClientRect();
+  for(const k in chips){const c=chips[k];tmp.copy(FOCI[k].a).project(camera);const vis=tmp.z<1&&Math.abs(tmp.x)<1.05&&Math.abs(tmp.y)<1.05;
+    c.style.display=vis?'':'none';if(vis)c.style.transform=`translate(${(tmp.x+1)/2*r.width+r.left-c.offsetWidth/2}px,${(1-tmp.y)/2*r.height+r.top-14}px)`;}
+}
+requestAnimationFrame(frame);
+if(tour.active)startTour();
+
+/* Golo Lab hand-control hook: lets scenes/hand.js steer this scene */
+window.__golo={THREE,scene,camera,controls,canvas,FOCI,ORDER,setFocus,stopTour,
+  poke(){lastInput=clock;if(camTween){camTween=null;controls.target.copy(curTarget);}if(tour.active)stopTour();controls.enabled=true;},
+  get focus(){return live.focus;}};
+window.dispatchEvent(new Event('golo-ready'));
+</script>
+<script src="hand.js"></script>
+<script src="docs.js"></script>
+</body></html>
