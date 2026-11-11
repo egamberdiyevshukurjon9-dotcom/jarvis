@@ -26,9 +26,8 @@
     padding:8px 12px;border-radius:10px;background:rgba(4,16,27,.88);color:#dff7ff;font:13px/1.45 system-ui,sans-serif;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
   #ghTip.show{opacity:1}
   #ghFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:59}
-  #ghVid{position:fixed;z-index:58;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:168px;aspect-ratio:4/3;object-fit:cover;border-radius:10px;
-    border:1px solid rgba(111,228,255,.5);transform:scaleX(-1);background:#000;opacity:.9}
-  @media (max-width:720px){#gh{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;gap:3px;padding:4px}#gh button,#gh a{padding:8px 9px;font-size:13px}#gh .lbl{display:none}#gh .min{display:inline}#ghTip{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}#ghVid{width:110px;bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
+  #ghVid{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1}
+  @media (max-width:720px){#gh{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;gap:3px;padding:4px}#gh button,#gh a{padding:8px 9px;font-size:13px}#gh .lbl{display:none}#gh .min{display:inline}#ghTip{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   const bar = document.createElement('div'); bar.id = 'gh'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Жарвис қўл бошқаруви');
@@ -112,7 +111,7 @@
     say(on ? 'Рентген ёқилди: ички қисмлар кўринади.' : 'Рентген ўчирилди.', 2200);
   }
   $('ghX').addEventListener('click', () => setXray(!xray));
-  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни юргизсангиз — модел айланади. Мушт қилиб юргизсангиз — силжийди. Икки қўлни узоқлаштирсангиз — яқинлашади ва ичига киради, яқинлаштирсангиз — узоқлашади. Тугма устида тез чимдиш — уни босиш. Рентген ва ‹ › тугмалари ҳам бор.', 9000));
+  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни камерага яқинлаштирсангиз — лойиҳа катталашади ва ичига киради, узоқлаштирсангиз — кичраяди. Кафтни ён томонга юргизсангиз — айланади. Мушт қилиб юргизсангиз — силжийди (муштни очгач қайтадан яқинлаштириш мумкин). Икки қўлни узоқлаштириш ҳам катталаштиради. Тугма устида тез чимдиш — уни босиш. Рентген ва ‹ › тугмалари ҳам бор.', 9000));
 
   /* ---------- camera + hands ---------- */
   let hands = null, handsReady = false, busy = false, stream = null, video = null, tracked = [], lastAt = 0, hid = 0, camOn = false;
@@ -172,6 +171,8 @@
     else if (h.pinch && (pd > .45 || reach < 1.0)) { h.pinch = false; h.ui = false; }
     h.fist = !h.pinch && n === 0 && reach < 1.3;
     h.open = !h.pinch && n >= 4;
+    const sz = (d2(P[0], P[5]) + d2(P[0], P[17]) + d2(P[5], P[17]) + d2(P[0], P[9])) / 4;
+    h.sz = h.sz ? h.sz + (sz - h.sz) * .3 : sz;
     const pc = [0, 5, 9, 13, 17]; h.palm = { x: pc.reduce((a, i) => a + P[i].x, 0) / 5, y: pc.reduce((a, i) => a + P[i].y, 0) / 5 };
     h.hist.push({ t: now, x: h.palm.x, open: h.open }); while (h.hist.length && now - h.hist[0].t > 320) h.hist.shift();
   }
@@ -194,10 +195,23 @@
       const r = G.z0.r * G.z0.d / Math.max(20, d);
       if (r < sph().radius && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12); // allow going inside
       dollyTo(r);
-      act.forEach(h => { h.ax = 0; h.ay = 0; });
+      act.forEach(h => { h.ax = 0; h.ay = 0; h.z0 = null; });
     } else {
       G.z0 = null;
       const h = act[0];
+      /* One hand: bring it closer to the camera to zoom in (and go inside), move it away to zoom out.
+         A fist is the "clutch": it pans and re-centres the size, so you can pull back and push in again. */
+      if (h && !h.fist) {
+        const r0 = sph().radius;
+        if (!h.z0) h.z0 = { s: h.sz, r: r0 };
+        let q = h.sz / h.z0.s; q = q > 1.08 ? q / 1.08 : q < .93 ? q / .93 : 1;
+        if (q === 1) h.z0.r = r0;
+        else {
+          const r = h.z0.r / Math.pow(q, 2.6);
+          if (r < r0 && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12);
+          if (Math.abs(r - r0) / r0 > .003) dollyTo(r);
+        }
+      } else if (h) h.z0 = null;
       if (h && Math.abs(h.ax || 0) + Math.abs(h.ay || 0) > 2) {
         const dx = h.ax, dy = h.ay; h.ax = 0; h.ay = 0;
         if (h.fist) pan(dx, dy); else orbit(dx * 1.1, dy * 1.1);
@@ -208,13 +222,9 @@
     const W = innerWidth, H = innerHeight, R = Math.min(devicePixelRatio, 2);
     if (fx.width !== W * R || fx.height !== H * R) { fx.width = W * R; fx.height = H * R; }
     g.setTransform(R, 0, 0, R, 0, 0); g.clearRect(0, 0, W, H);
-    for (const h of tracked) {
-      const P = h.pts; g.strokeStyle = 'rgba(111,228,255,.75)'; g.lineWidth = 1.4; g.beginPath();
-      for (const [a, b] of HC) { g.moveTo(P[a].x, P[a].y); g.lineTo(P[b].x, P[b].y); } g.stroke();
-      g.fillStyle = 'rgba(223,247,255,.95)'; for (const p of P) { g.beginPath(); g.arc(p.x, p.y, 2.4, 0, 7); g.fill(); }
-      const tp = h.pinch ? h.pp : P[8]; g.strokeStyle = h.pinch ? '#ffb547' : '#6fe4ff'; g.lineWidth = 2.2; g.beginPath(); g.arc(tp.x, tp.y, h.pinch ? 15 : 11, 0, 7); g.stroke();
-      const lab = h.pinch ? 'ЧИМДИШ' : h.fist ? 'МУШТ' : h.open ? 'КАФТ' : '';
-      if (lab) { g.font = '600 11px system-ui,sans-serif'; g.fillStyle = 'rgba(2,16,27,.75)'; const w = g.measureText(lab).width + 10; g.fillRect(h.palm.x - w / 2, h.palm.y + h.size + 8, w, 18); g.fillStyle = '#dff7ff'; g.fillText(lab, h.palm.x - w / 2 + 5, h.palm.y + h.size + 21); }
+    for (const h of tracked) { // no hand skeleton on screen: only a small pointer for aiming at buttons
+      const tp = h.pinch ? h.pp : h.pts[8];
+      g.fillStyle = h.pinch ? 'rgba(255,181,71,.9)' : 'rgba(111,228,255,.75)'; g.beginPath(); g.arc(tp.x, tp.y, h.pinch ? 7 : 5, 0, 7); g.fill();
     }
     for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i], a = (now - f.t) / 400; if (a > 1) { flashes.splice(i, 1); continue; } g.strokeStyle = `rgba(255,181,71,${1 - a})`; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, 10 + a * 26, 0, 7); g.stroke(); }
   }
