@@ -111,7 +111,7 @@
     say(on ? 'Рентген ёқилди: ички қисмлар кўринади.' : 'Рентген ўчирилди.', 2200);
   }
   $('ghX').addEventListener('click', () => setXray(!xray));
-  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни камерага яқинлаштирсангиз — лойиҳа катталашади ва ичига киради, узоқлаштирсангиз — кичраяди. Кафтни ён томонга юргизсангиз — айланади. Мушт қилиб юргизсангиз — силжийди (муштни очгач қайтадан яқинлаштириш мумкин). Икки қўлни узоқлаштириш ҳам катталаштиради. Тугма устида тез чимдиш — уни босиш. Рентген ва ‹ › тугмалари ҳам бор.', 9000));
+  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни камерага яқинлаштирсангиз — лойиҳа катталашади ва ичига киради, узоқлаштирсангиз — кичраяди. Кафтни ён томонга юргизсангиз — айланади. Мушт қилиб юргизсангиз — силжийди (муштни очгач қайтадан яқинлаштириш мумкин). Икки қўлни узоқлаштириш ҳам катталаштиради. Тугма устида тез чимдиш — уни босиш. Рентген, ‹ › ва 📄 Ҳужжатлар тугмалари ҳам бор: ҳужжат очиқ бўлса, кафтни юқори-пастга юргизиб матнни варақлайсиз.', 9000));
 
   /* ---------- camera + hands ---------- */
   let hands = null, handsReady = false, busy = false, stream = null, video = null, tracked = [], lastAt = 0, hid = 0, camOn = false;
@@ -185,6 +185,10 @@
       h.edge = false;
       const el = document.elementFromPoint(h.pp.x, h.pp.y), b = el && el.closest('button, a, [role="button"], summary, label');
       if (b && !(S && b === S.canvas)) { b.click(); h.ui = true; flashes.push({ x: h.pp.x, y: h.pp.y, t: now }); } else h.ui = false;
+    }
+    if (window.goloDocs && goloDocs.isOpen()) { // documents panel open: an open hand moved up/down scrolls the text
+      const h = HS.find(h => !h.ui && !h.fist); if (h && Math.abs(h.ay || 0) > 2) goloDocs.scroll(h.ay * 3);
+      HS.forEach(h => { h.ax = 0; h.ay = 0; h.z0 = null; }); return;
     }
     if (!ready()) return;
     /* Any visible hand steers: move an open hand (or pinch) to rotate, fist to move, two hands apart/together to zoom. */
