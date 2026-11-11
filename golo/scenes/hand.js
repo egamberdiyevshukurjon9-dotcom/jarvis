@@ -1,8 +1,8 @@
 /* Жарвис Голо Лаб · қўл бошқаруви
    Adds hand-gesture control (MediaPipe Hands), an X-ray view and "go inside" to a 3D scene page.
    The scene exposes window.__golo = { THREE, scene, camera, controls, canvas, FOCI, ORDER, setFocus, poke, focus }.
-   Gestures: pinch + drag = rotate, two-hand pinch = zoom, fist = move, open palm swipe = next/previous view,
-   two palms apart = X-ray on, palms together = X-ray off, quick pinch over a button = press it. */
+   Gestures: move an open hand (or a pinch) = rotate, fist = move, two hands apart/together = zoom in (inside)/out,
+   quick pinch over a button = press it. */
 (() => {
   'use strict';
   const HANDS_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/';
@@ -26,9 +26,8 @@
     padding:8px 12px;border-radius:10px;background:rgba(4,16,27,.88);color:#dff7ff;font:13px/1.45 system-ui,sans-serif;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
   #ghTip.show{opacity:1}
   #ghFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:59}
-  #ghVid{position:fixed;z-index:58;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:168px;aspect-ratio:4/3;object-fit:cover;border-radius:10px;
-    border:1px solid rgba(111,228,255,.5);transform:scaleX(-1);background:#000;opacity:.9}
-  @media (max-width:720px){#gh{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;gap:3px;padding:4px}#gh button,#gh a{padding:8px 9px;font-size:13px}#gh .lbl{display:none}#gh .min{display:inline}#ghTip{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}#ghVid{width:110px;bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
+  #ghVid{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1}
+  @media (max-width:720px){#gh{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;gap:3px;padding:4px}#gh button,#gh a{padding:8px 9px;font-size:13px}#gh .lbl{display:none}#gh .min{display:inline}#ghTip{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   const bar = document.createElement('div'); bar.id = 'gh'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Жарвис қўл бошқаруви');
@@ -112,7 +111,7 @@
     say(on ? 'Рентген ёқилди: ички қисмлар кўринади.' : 'Рентген ўчирилди.', 2200);
   }
   $('ghX').addEventListener('click', () => setXray(!xray));
-  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва қўлингизни кўрсатинг. Чимдиб суриш — айлантириш. Икки қўл билан чимдиш — яқинлаштириш. Мушт — силжитиш. Кафтни тез чапга/ўнгга суриш — кейинги кўриниш. Икки кафтни ёйиш — рентген, чапак — ўчириш. Тугма устида тез чимдиш — уни босиш.', 9000));
+  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни камерага яқинлаштирсангиз — лойиҳа катталашади ва ичига киради, узоқлаштирсангиз — кичраяди. Кафтни ён томонга юргизсангиз — айланади. Мушт қилиб юргизсангиз — силжийди (муштни очгач қайтадан яқинлаштириш мумкин). Икки қўлни узоқлаштириш ҳам катталаштиради. Тугма устида тез чимдиш — уни босиш. Рентген ва ‹ › тугмалари ҳам бор.', 9000));
 
   /* ---------- camera + hands ---------- */
   let hands = null, handsReady = false, busy = false, stream = null, video = null, tracked = [], lastAt = 0, hid = 0, camOn = false;
@@ -140,6 +139,7 @@
     } catch (e) { say('Қўл таниш модели юкланмади. Интернетни текширинг.', 6000); }
   }
   function camStop() {
+    $('ghCam').querySelector('.lbl').textContent = 'Қўл бошқаруви';
     camOn = false; stream?.getTracks().forEach(t => t.stop()); stream = null; video?.remove(); video = null; tracked = [];
     $('ghCam').setAttribute('aria-pressed', 'false');
   }
@@ -154,8 +154,11 @@
       let best = null, bd = 1e9;
       tracked.forEach(t => { if (next.includes(t)) return; const d = d2(t.pts[0], pts[0]); if (d < bd) { bd = d; best = t; } });
       const h = (best && bd < Math.max(140, innerWidth * .15)) ? best : { id: ++hid, pts: pts.map(p => ({ ...p })), pinch: false, hist: [] };
+      const pv = h.palm ? { ...h.palm } : null, wasFist = h.fist;
       h.pts.forEach((p, i) => { p.x += (pts[i].x - p.x) * .6; p.y += (pts[i].y - p.y) * .6; });
       feat(h, lastAt); next.push(h);
+      // motion is accumulated per detection, so it is not lost when the scene renders slowly
+      if (pv && wasFist === h.fist) { h.ax = (h.ax || 0) + h.palm.x - pv.x; h.ay = (h.ay || 0) + h.palm.y - pv.y; } else { h.ax = 0; h.ay = 0; }
     });
     tracked = next;
   }
@@ -168,13 +171,15 @@
     else if (h.pinch && (pd > .45 || reach < 1.0)) { h.pinch = false; h.ui = false; }
     h.fist = !h.pinch && n === 0 && reach < 1.3;
     h.open = !h.pinch && n >= 4;
+    const sz = (d2(P[0], P[5]) + d2(P[0], P[17]) + d2(P[5], P[17]) + d2(P[0], P[9])) / 4;
+    h.sz = h.sz ? h.sz + (sz - h.sz) * .3 : sz;
     const pc = [0, 5, 9, 13, 17]; h.palm = { x: pc.reduce((a, i) => a + P[i].x, 0) / 5, y: pc.reduce((a, i) => a + P[i].y, 0) / 5 };
     h.hist.push({ t: now, x: h.palm.x, open: h.open }); while (h.hist.length && now - h.hist[0].t > 320) h.hist.shift();
   }
   const G = { z0: null, palms: [], big: 0, swipe: 0 }, flashes = [];
   function process(now) {
     if (!camOn) return;
-    if (now - lastAt > 500) tracked = [];
+    if (performance.now() - lastAt > 1000) tracked = [];
     const HS = tracked;
     for (const h of HS) if (h.edge) {
       h.edge = false;
@@ -182,30 +187,34 @@
       if (b && !(S && b === S.canvas)) { b.click(); h.ui = true; flashes.push({ x: h.pp.x, y: h.pp.y, t: now }); } else h.ui = false;
     }
     if (!ready()) return;
-    const pin = HS.filter(h => h.pinch && !h.ui);
-    if (pin.length >= 2) {
-      const d = d2(pin[0].pp, pin[1].pp);
+    /* Any visible hand steers: move an open hand (or pinch) to rotate, fist to move, two hands apart/together to zoom. */
+    const act = HS.filter(h => !h.ui);
+    if (act.length >= 2) {
+      const d = d2(act[0].palm, act[1].palm);
       if (!G.z0) G.z0 = { d, r: sph().radius };
-      if (G.z0.d / d < 1 && S.controls.minDistance > .02 && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12); // allow getting inside
-      dollyTo(G.z0.r * G.z0.d / d);
+      const r = G.z0.r * G.z0.d / Math.max(20, d);
+      if (r < sph().radius && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12); // allow going inside
+      dollyTo(r);
+      act.forEach(h => { h.ax = 0; h.ay = 0; h.z0 = null; });
     } else {
       G.z0 = null;
-      if (pin.length === 1) { const h = pin[0]; orbit(h.pp.x - h.last.x, h.pp.y - h.last.y); h.last = { ...h.pp }; }
-    }
-    HS.forEach(h => { if (!h.fist) h.lf = null; });
-    const fists = HS.filter(h => h.fist);
-    if (fists.length === 1 && !pin.length) { const h = fists[0]; if (h.lf) pan(h.palm.x - h.lf.x, h.palm.y - h.lf.y); h.lf = { ...h.palm }; }
-    if (HS.length === 2) {
-      const d = d2(HS[0].palm, HS[1].palm) / innerWidth;
-      G.palms.push({ t: now, d }); while (G.palms.length && now - G.palms[0].t > 700) G.palms.shift();
-      const o = G.palms[0], flat = HS.every(h => h.open || h.fist);
-      if (flat && o && d - o.d > .16 && d > .36 && !xray && now - G.big > 1200) { setXray(true); G.big = now; G.palms = []; }
-      if (d < .1 && xray && now - G.big > 1200) { setXray(false); G.big = now; G.palms = []; }
-    } else G.palms = [];
-    if (HS.length === 1 && HS[0].open && now - G.swipe > 900) {
-      const hs = HS[0].hist; if (hs.length > 3 && hs.every(p => p.open)) {
-        const dx = hs[hs.length - 1].x - hs[0].x, dt = (hs[hs.length - 1].t - hs[0].t) / 1000;
-        if (dt > .08 && Math.abs(dx) > innerWidth * .22) { stepFocus(dx > 0 ? 1 : -1); G.swipe = now; HS[0].hist = []; }
+      const h = act[0];
+      /* One hand: bring it closer to the camera to zoom in (and go inside), move it away to zoom out.
+         A fist is the "clutch": it pans and re-centres the size, so you can pull back and push in again. */
+      if (h && !h.fist) {
+        const r0 = sph().radius;
+        if (!h.z0) h.z0 = { s: h.sz, r: r0 };
+        let q = h.sz / h.z0.s; q = q > 1.08 ? q / 1.08 : q < .93 ? q / .93 : 1;
+        if (q === 1) h.z0.r = r0;
+        else {
+          const r = h.z0.r / Math.pow(q, 2.6);
+          if (r < r0 && base.min != null) S.controls.minDistance = Math.max(.02, base.min * .12);
+          if (Math.abs(r - r0) / r0 > .003) dollyTo(r);
+        }
+      } else if (h) h.z0 = null;
+      if (h && Math.abs(h.ax || 0) + Math.abs(h.ay || 0) > 2) {
+        const dx = h.ax, dy = h.ay; h.ax = 0; h.ay = 0;
+        if (h.fist) pan(dx, dy); else orbit(dx * 1.1, dy * 1.1);
       }
     }
   }
@@ -213,13 +222,9 @@
     const W = innerWidth, H = innerHeight, R = Math.min(devicePixelRatio, 2);
     if (fx.width !== W * R || fx.height !== H * R) { fx.width = W * R; fx.height = H * R; }
     g.setTransform(R, 0, 0, R, 0, 0); g.clearRect(0, 0, W, H);
-    for (const h of tracked) {
-      const P = h.pts; g.strokeStyle = 'rgba(111,228,255,.75)'; g.lineWidth = 1.4; g.beginPath();
-      for (const [a, b] of HC) { g.moveTo(P[a].x, P[a].y); g.lineTo(P[b].x, P[b].y); } g.stroke();
-      g.fillStyle = 'rgba(223,247,255,.95)'; for (const p of P) { g.beginPath(); g.arc(p.x, p.y, 2.4, 0, 7); g.fill(); }
-      const tp = h.pinch ? h.pp : P[8]; g.strokeStyle = h.pinch ? '#ffb547' : '#6fe4ff'; g.lineWidth = 2.2; g.beginPath(); g.arc(tp.x, tp.y, h.pinch ? 15 : 11, 0, 7); g.stroke();
-      const lab = h.pinch ? 'ЧИМДИШ' : h.fist ? 'МУШТ' : h.open ? 'КАФТ' : '';
-      if (lab) { g.font = '600 11px system-ui,sans-serif'; g.fillStyle = 'rgba(2,16,27,.75)'; const w = g.measureText(lab).width + 10; g.fillRect(h.palm.x - w / 2, h.palm.y + h.size + 8, w, 18); g.fillStyle = '#dff7ff'; g.fillText(lab, h.palm.x - w / 2 + 5, h.palm.y + h.size + 21); }
+    for (const h of tracked) { // no hand skeleton on screen: only a small pointer for aiming at buttons
+      const tp = h.pinch ? h.pp : h.pts[8];
+      g.fillStyle = h.pinch ? 'rgba(255,181,71,.9)' : 'rgba(111,228,255,.75)'; g.beginPath(); g.arc(tp.x, tp.y, h.pinch ? 7 : 5, 0, 7); g.fill();
     }
     for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i], a = (now - f.t) / 400; if (a > 1) { flashes.splice(i, 1); continue; } g.strokeStyle = `rgba(255,181,71,${1 - a})`; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, 10 + a * 26, 0, 7); g.stroke(); }
   }
@@ -227,6 +232,7 @@
     requestAnimationFrame(loop);
     if (camOn && handsReady && !busy && video && video.readyState >= 2) { busy = true; hands.send({ image: video }).catch(() => { }).finally(() => { busy = false; }); }
     process(now); if (anim) anim(); draw(now);
+    if (camOn) { const n = tracked.length, lbl = $('ghCam').querySelector('.lbl'); const t = handsReady ? (n ? `Қўл: ${n} та кўринди` : 'Қўлни кўрсатинг') : 'Юкланмоқда…'; if (lbl.textContent !== t) lbl.textContent = t; }
   }
   requestAnimationFrame(loop);
   window.goloHand = { simulate: () => { camOn = true; }, orbit, pan, dollyTo, glide, setXray, stepFocus, feed: r => onHands(r), state: () => ({ camOn, xray, hands: tracked.length, radius: ready() ? sph().radius : null }) };
