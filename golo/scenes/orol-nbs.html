@@ -652,7 +652,7 @@ let W=1,H=1,pr=Math.min(devicePixelRatio||1,1.75),tier=0;const FOV0=32;
 const off={x:0,y:0,tx:0,ty:0,ax:NaN,ay:NaN};
 function measureOffset(){if(!desk()){off.tx=off.ty=0;return;}const r=$('#stage').getBoundingClientRect(),Lr=$('#left').getBoundingClientRect(),Rr=$('#right').getBoundingClientRect(),C=$('#card').getBoundingClientRect();off.tx=((Lr.right+Rr.left)/2-r.left)-W/2;off.ty=(C.top-12-r.top)/2-H/2;}
 function applyOffset(){if(Math.abs(off.x-off.ax)<.3&&Math.abs(off.y-off.ay)<.3)return;off.ax=off.x;off.ay=off.y;const fw=W+2*Math.abs(off.x),fh=H+2*Math.abs(off.y);camera.aspect=fw/fh;camera.fov=2*THREE.MathUtils.radToDeg(Math.atan(Math.tan(THREE.MathUtils.degToRad(FOV0/2))*fh/H));camera.setViewOffset(fw,fh,off.x>0?0:2*Math.abs(off.x),off.y>0?0:2*Math.abs(off.y),W,H);camera.updateProjectionMatrix();}
-function layout(){const r=$('#stage').getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);renderer.setPixelRatio(pr);renderer.setSize(W,H,false);distScale=desk()?1:Math.pow(Math.max(1,1.25/(W/H)),.85);measureOffset();off.x=off.tx;off.y=off.ty;off.ax=NaN;applyOffset();ptsMat.uniforms.uScale.value=H*pr/(2*Math.tan(THREE.MathUtils.degToRad(FOV0/2)));}
+function layout(){const r=$('#stage').getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);renderer.setPixelRatio(Math.min(pr,window.__goloPR||9));renderer.setSize(W,H,false);distScale=desk()?1:Math.pow(Math.max(1,1.25/(W/H)),.85);measureOffset();off.x=off.tx;off.y=off.ty;off.ax=NaN;applyOffset();ptsMat.uniforms.uScale.value=H*pr/(2*Math.tan(THREE.MathUtils.degToRad(FOV0/2)));}
 new ResizeObserver(layout).observe($('#stage'));addEventListener('resize',layout);layout();
 let fpsAcc=0,fpsN=0;
 function setTier(t){tier=t;if(t>=1){pr=1;sun.shadow.mapSize.set(1024,1024);sun.shadow.map?.dispose();sun.shadow.map=null;}if(t>=2){renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material&&!Array.isArray(o.material))o.material.needsUpdate=true;});}layout();}
@@ -748,7 +748,7 @@ requestAnimationFrame(t=>{last=t;frame(t);});
 window.__td={seek(t){if(!tour.active)startTour();tour.t=t;},stats:()=>({tier,clock,y:yAct,plants:PL.length,co2:model(yAct,true,10).co2yr})};
 
 /* Golo Lab hand-control hook: lets scenes/hand.js steer this scene */
-window.__golo={THREE,scene,camera,controls,canvas,FOCI,ORDER,setFocus,stopTour,
+window.__golo={THREE,scene,camera,renderer,controls,canvas,FOCI,ORDER,setFocus,stopTour,
   poke(){lastInput=clock;if(camTween){camTween=null;controls.target.copy(curTarget);}if(tour.active)stopTour();controls.enabled=true;},
   get focus(){return live.focus;}};
 window.dispatchEvent(new Event('golo-ready'));

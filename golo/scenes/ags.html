@@ -857,7 +857,7 @@ function applyOffset(){
 }
 function layout(){
   const r=$('#stage').getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);
-  renderer.setPixelRatio(pr);renderer.setSize(W,H,false);
+  renderer.setPixelRatio(Math.min(pr,window.__goloPR||9));renderer.setSize(W,H,false);
   distScale=desk()?1:Math.pow(Math.max(1,1.25/(W/H)),.85);
   measureOffset();off.x=off.tx;off.y=off.ty;off.ax=NaN;applyOffset();
   ptsMat.uniforms.uScale.value=H*pr/(2*Math.tan(THREE.MathUtils.degToRad(FOV0/2)));
@@ -1003,7 +1003,7 @@ requestAnimationFrame(t=>{last=t;frame(t);});
 window.__td={seek(t){if(!tour.active)startTour();tour.t=t;},live(o){stopTour();Object.assign(live,o);if(o.focus)setFocus(o.focus);syncControls();},stats:()=>({tier,parcels:parcels.length,clock,Q:Qact,sensors:sensorVals})};
 
 /* Golo Lab hand-control hook: lets scenes/hand.js steer this scene */
-window.__golo={THREE,scene,camera,controls,canvas,FOCI,ORDER,setFocus,stopTour,
+window.__golo={THREE,scene,camera,renderer,controls,canvas,FOCI,ORDER,setFocus,stopTour,
   poke(){lastInput=clock;if(camTween){camTween=null;controls.target.copy(curTarget);}if(tour.active)stopTour();controls.enabled=true;},
   get focus(){return live.focus;}};
 window.dispatchEvent(new Event('golo-ready'));
