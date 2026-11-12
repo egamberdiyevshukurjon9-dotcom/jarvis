@@ -25,7 +25,12 @@
   #ghTip{position:fixed;z-index:60;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));max-width:min(560px,calc(100vw - 24px));
     padding:8px 12px;border-radius:10px;background:rgba(4,16,27,.88);color:#dff7ff;font:13px/1.45 system-ui,sans-serif;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
   #ghTip.show{opacity:1}
-  #ghFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:59}
+  .ghCur{position:fixed;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;z-index:80;display:none;will-change:transform;
+    background:conic-gradient(#ffb547 calc(var(--p,0)*1turn),rgba(111,228,255,.28) 0);-webkit-mask:radial-gradient(circle,#000 0 4px,transparent 5px 11px,#000 12px);mask:radial-gradient(circle,#000 0 4px,transparent 5px 11px,#000 12px)}
+  .ghCur.pinch{background:#ffb547}
+  .ghCur.flash{animation:ghFl .4s ease-out}
+  @keyframes ghFl{from{box-shadow:0 0 0 0 rgba(255,181,71,.9)}to{box-shadow:0 0 0 26px rgba(255,181,71,0)}}
+  .gh-hover{outline:3px solid #ffb547!important;outline-offset:2px}
   #ghVid{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1}
   @media (max-width:720px){#gh{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;gap:3px;padding:4px}#gh button,#gh a{padding:8px 9px;font-size:13px}#gh .lbl{display:none}#gh .min{display:inline}#ghTip{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
   `;
@@ -39,11 +44,11 @@
     <button type="button" id="ghX" aria-pressed="false" title="Рентген: деворлар шаффоф">◎ <span class="lbl">Рентген</span></button>
     <button type="button" id="ghPrev" title="Олдинги кўриниш">‹</button>
     <button type="button" id="ghNext" title="Кейинги кўриниш">›</button>
+    <button type="button" id="ghReset" title="Бошланғич кўринишга қайтиш">⟲ <span class="lbl">Қайта</span></button>
     <button type="button" id="ghHelp" title="Ишоралар">?</button>`;
   document.body.appendChild(bar);
   const tip = document.createElement('div'); tip.id = 'ghTip'; tip.setAttribute('role', 'status'); document.body.appendChild(tip);
-  const fx = document.createElement('canvas'); fx.id = 'ghFx'; document.body.appendChild(fx);
-  const g = fx.getContext('2d');
+  const curs = [0, 1].map(() => { const c = document.createElement('div'); c.className = 'ghCur'; c.setAttribute('aria-hidden', 'true'); document.body.appendChild(c); return c; });
   const $ = id => document.getElementById(id);
   let tipT = 0;
   function say(t, ms = 3800) { tip.textContent = t; tip.classList.add('show'); clearTimeout(tipT); tipT = setTimeout(() => tip.classList.remove('show'), ms); }
@@ -92,6 +97,11 @@
     const i = S.ORDER.indexOf(S.focus), n = S.ORDER.length, key = S.ORDER[((i < 0 ? 0 : i) + k + n) % n];
     S.setFocus(key); say(S.FOCI[key]?.label || key, 1800);
   }
+  $('ghReset').addEventListener('click', () => {
+    if (!ready()) return; S.poke(); if (xray) setXray(false);
+    if (base.min != null) S.controls.minDistance = base.min;
+    if (S.ORDER && S.setFocus) S.setFocus(S.ORDER[0]); say('Бошланғич кўриниш.', 1600);
+  });
   $('ghPrev').addEventListener('click', () => stepFocus(-1));
   $('ghNext').addEventListener('click', () => stepFocus(1));
 
@@ -111,7 +121,7 @@
     say(on ? 'Рентген ёқилди: ички қисмлар кўринади.' : 'Рентген ўчирилди.', 2200);
   }
   $('ghX').addEventListener('click', () => setXray(!xray));
-  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни камерага яқинлаштирсангиз — лойиҳа катталашади ва ичига киради, узоқлаштирсангиз — кичраяди. Кафтни ён томонга юргизсангиз — айланади. Мушт қилиб юргизсангиз — силжийди (муштни очгач қайтадан яқинлаштириш мумкин). Икки қўлни узоқлаштириш ҳам катталаштиради. Тугма устида тез чимдиш — уни босиш. Рентген, ‹ › ва 📄 Ҳужжатлар тугмалари ҳам бор: ҳужжат очиқ бўлса, кафтни юқори-пастга юргизиб матнни варақлайсиз.', 9000));
+  $('ghHelp').addEventListener('click', () => say('Камерани ёқинг ва кафтингизни кўрсатинг. Кафтни камерага яқинлаштирсангиз — лойиҳа катталашади ва ичига киради, узоқлаштирсангиз — кичраяди. Кафтни ён томонга юргизсангиз — айланади. Мушт қилиб юргизсангиз — силжийди (муштни очгач қайтадан яқинлаштириш мумкин). Икки қўлни узоқлаштириш ҳам катталаштиради. Сариқ ҳалқа — кўрсаткич: тугма устида 1 сония ушлаб турсангиз ёки чимдисангиз, тугма босилади. Рентген, ‹ › ва 📄 Ҳужжатлар тугмалари ҳам бор: ҳужжат очиқ бўлса, кафтни юқори-пастга юргизиб матнни варақлайсиз.', 9000));
 
   /* ---------- camera + hands ---------- */
   let hands = null, handsReady = false, busy = false, stream = null, video = null, tracked = [], lastAt = 0, hid = 0, camOn = false;
@@ -120,7 +130,7 @@
     const b = $('ghCam');
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('nomedia');
-      stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: MOBILE ? 640 : 960 }, height: { ideal: MOBILE ? 480 : 540 }, facingMode: 'user' }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: MOBILE ? 320 : 640 }, height: { ideal: MOBILE ? 240 : 480 }, frameRate: { ideal: 30, max: 30 }, facingMode: 'user' }, audio: false });
     } catch (e) {
       say(IN_VIEWER ? 'Claude ичида камера ёпиқ. Қўл бошқаруви учун саҳифани браузерда (GitHub Pages) очинг. Тугмалар бу ерда ҳам ишлайди.' : 'Камерага рухсат берилмади. Манзил сатридаги камера белгисидан рухсат беринг.', 8000);
       return;
@@ -132,21 +142,22 @@
       if (!window.Hands) await loadScript(HANDS_BASE + 'hands.js');
       if (!hands) {
         hands = new window.Hands({ locateFile: f => HANDS_BASE + f });
-        hands.setOptions({ maxNumHands: 2, modelComplexity: MOBILE ? 0 : 1, minDetectionConfidence: .6, minTrackingConfidence: .5, selfieMode: false });
+        hands.setOptions({ maxNumHands: MOBILE ? 1 : 2, modelComplexity: MOBILE ? 0 : 1, minDetectionConfidence: .6, minTrackingConfidence: .5, selfieMode: false });
         hands.onResults(onHands); await hands.initialize();
       }
-      handsReady = true; say('Тайёр! Қўлингизни кўрсатинг. Чимдиб суриб айлантиринг.', 5000);
+      handsReady = true; say('Тайёр! Кафтингизни кўрсатинг. Сариқ ҳалқа — кўрсаткич: тугма устида 1 сония ушлаб турсангиз босилади.', 6000); if (MOBILE) setPR(1);
     } catch (e) { say('Қўл таниш модели юкланмади. Интернетни текширинг.', 6000); }
   }
   function camStop() {
     $('ghCam').querySelector('.lbl').textContent = 'Қўл бошқаруви';
-    camOn = false; stream?.getTracks().forEach(t => t.stop()); stream = null; video?.remove(); video = null; tracked = [];
+    camOn = false; stream?.getTracks().forEach(t => t.stop()); stream = null; video?.remove(); video = null; clearHover(); tracked = [];
     $('ghCam').setAttribute('aria-pressed', 'false');
   }
   $('ghCam').addEventListener('click', () => camOn ? camStop() : camStart());
   try { if (new URLSearchParams(location.search).get('hand') === '1' && !IN_VIEWER) setTimeout(camStart, 600); } catch (_) { }
 
-  const toScreen = p => ({ x: (1 - p.x) * innerWidth, y: p.y * innerHeight });
+  const AX = .68, AY = .62; // part of the camera frame that maps onto the full screen
+  const toScreen = p => ({ x: ((1 - p.x - .5) / AX + .5) * innerWidth, y: ((p.y - .5) / AY + .5) * innerHeight });
   function onHands(res) {
     lastAt = performance.now();
     const fresh = (res.multiHandLandmarks || []).map(lm => lm.map(toScreen)), next = [];
@@ -157,9 +168,14 @@
       const pv = h.palm ? { ...h.palm } : null, wasFist = h.fist;
       h.pts.forEach((p, i) => { p.x += (pts[i].x - p.x) * .6; p.y += (pts[i].y - p.y) * .6; });
       feat(h, lastAt); next.push(h);
+      // pointer = index knuckle: it stays put while the fingers pinch, so a click lands where you aimed
+      const tx = clamp(h.pts[5].x, 4, innerWidth - 4), ty = clamp(h.pts[5].y, 4, innerHeight - 4);
+      if (!h.cur) h.cur = { x: tx, y: ty };
+      else { const d = Math.hypot(tx - h.cur.x, ty - h.cur.y), a = clamp(d / (innerWidth * .06), .12, .75); h.cur.x += (tx - h.cur.x) * a; h.cur.y += (ty - h.cur.y) * a; }
       // motion is accumulated per detection, so it is not lost when the scene renders slowly
       if (pv && wasFist === h.fist) { h.ax = (h.ax || 0) + h.palm.x - pv.x; h.ay = (h.ay || 0) + h.palm.y - pv.y; } else { h.ax = 0; h.ay = 0; }
     });
+    tracked.forEach(t => { if (!next.includes(t)) t.hover?.classList.remove('gh-hover'); });
     tracked = next;
   }
   function feat(h, now) {
@@ -176,23 +192,30 @@
     const pc = [0, 5, 9, 13, 17]; h.palm = { x: pc.reduce((a, i) => a + P[i].x, 0) / 5, y: pc.reduce((a, i) => a + P[i].y, 0) / 5 };
     h.hist.push({ t: now, x: h.palm.x, open: h.open }); while (h.hist.length && now - h.hist[0].t > 320) h.hist.shift();
   }
-  const G = { z0: null, palms: [], big: 0, swipe: 0 }, flashes = [];
+  const G = { z0: null, palms: [], big: 0, swipe: 0 };
   function process(now) {
     if (!camOn) return;
-    if (performance.now() - lastAt > 1000) tracked = [];
+    if (performance.now() - lastAt > 1000 && tracked.length) { clearHover(); tracked = []; }
     const HS = tracked;
-    for (const h of HS) if (h.edge) {
-      h.edge = false;
-      const el = document.elementFromPoint(h.pp.x, h.pp.y), b = el && el.closest('button, a, [role="button"], summary, label');
-      if (b && !(S && b === S.canvas)) { b.click(); h.ui = true; flashes.push({ x: h.pp.x, y: h.pp.y, t: now }); } else h.ui = false;
-    }
+    const UI = 'button, a, [role="button"], summary, label, input, [data-air]';
+    HS.forEach((h, i) => {
+      const el = h.cur && document.elementFromPoint(h.cur.x, h.cur.y), b = el && el.closest(UI);
+      const ok = b && !(S && b === S.canvas) && !b.disabled;
+      if (h.hover !== (ok ? b : null)) { h.hover?.classList.remove('gh-hover'); h.hover = ok ? b : null; h.hover?.classList.add('gh-hover'); h.hT = now; h.fired = false; }
+      const press = () => { b.click(); h.fired = true; h.ui = true; const c = curs[i]; if (c) { c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); } };
+      h.dwell = 0;
+      if (h.edge) { h.edge = false; if (ok) press(); else h.ui = false; }
+      // dwell: hold the pointer on a button for about a second to press it (links are pinch-only, so you do not leave the page by accident)
+      else if (ok && !h.fired && !h.pinch && b.tagName !== 'A' && b.type !== 'range') { h.dwell = clamp((now - h.hT) / 1100, 0, 1); if (h.dwell >= 1) { press(); h.dwell = 0; } }
+      h.over = !!ok;
+    });
     if (window.goloDocs && goloDocs.isOpen()) { // documents panel open: an open hand moved up/down scrolls the text
-      const h = HS.find(h => !h.ui && !h.fist); if (h && Math.abs(h.ay || 0) > 2) goloDocs.scroll(h.ay * 3);
+      const h = HS.find(h => !h.ui && !h.fist && !h.over); if (h && Math.abs(h.ay || 0) > 2) goloDocs.scroll(h.ay * 3);
       HS.forEach(h => { h.ax = 0; h.ay = 0; h.z0 = null; }); return;
     }
     if (!ready()) return;
     /* Any visible hand steers: move an open hand (or pinch) to rotate, fist to move, two hands apart/together to zoom. */
-    const act = HS.filter(h => !h.ui);
+    const act = HS.filter(h => !h.ui && !h.over); HS.forEach(h => { if (h.over) { h.ax = 0; h.ay = 0; h.z0 = null; } });
     if (act.length >= 2) {
       const d = d2(act[0].palm, act[1].palm);
       if (!G.z0) G.z0 = { d, r: sph().radius };
@@ -222,22 +245,33 @@
       }
     }
   }
-  function draw(now) {
-    const W = innerWidth, H = innerHeight, R = Math.min(devicePixelRatio, 2);
-    if (fx.width !== W * R || fx.height !== H * R) { fx.width = W * R; fx.height = H * R; }
-    g.setTransform(R, 0, 0, R, 0, 0); g.clearRect(0, 0, W, H);
-    for (const h of tracked) { // no hand skeleton on screen: only a small pointer for aiming at buttons
-      const tp = h.pinch ? h.pp : h.pts[8];
-      g.fillStyle = h.pinch ? 'rgba(255,181,71,.9)' : 'rgba(111,228,255,.75)'; g.beginPath(); g.arc(tp.x, tp.y, h.pinch ? 7 : 5, 0, 7); g.fill();
-    }
-    for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i], a = (now - f.t) / 400; if (a > 1) { flashes.splice(i, 1); continue; } g.strokeStyle = `rgba(255,181,71,${1 - a})`; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, 10 + a * 26, 0, 7); g.stroke(); }
+  function clearHover() { tracked.forEach(h => h.hover?.classList.remove('gh-hover')); }
+  function draw() {
+    curs.forEach((c, i) => {
+      const h = tracked[i];
+      if (!camOn || !h || !h.cur) { if (c.style.display !== 'none') c.style.display = 'none'; return; }
+      if (c.style.display !== 'block') c.style.display = 'block';
+      c.style.transform = `translate3d(${h.cur.x.toFixed(1)}px,${h.cur.y.toFixed(1)}px,0)`;
+      c.classList.toggle('pinch', !!h.pinch); c.style.setProperty('--p', (h.dwell || 0).toFixed(2));
+    });
   }
+  /* keep the page responsive: when the frame rate drops, render the 3D scene at a lower resolution */
+  let prNow = null, fN = 0, fT0 = performance.now();
+  function setPR(v) { if (!S || !S.renderer) return; v = Math.min(v, S.renderer.getPixelRatio()); if (v < S.renderer.getPixelRatio() - .01) { window.__goloPR = v; S.renderer.setPixelRatio(v); prNow = v; } }
+  function watchFps(now) {
+    fN++; if (now - fT0 < 2000) return;
+    const fps = fN * 1000 / (now - fT0); fN = 0; fT0 = now;
+    if (!S || !S.renderer || document.hidden) return;
+    const pr = S.renderer.getPixelRatio(), floor = MOBILE ? .6 : .8;
+    if (fps < 24 && pr > floor + .01) setPR(Math.max(floor, pr > 1.5 ? 1.25 : pr > 1.05 ? 1 : pr - .2));
+  }
+  let lastSend = 0; const SEND_MS = MOBILE ? 90 : 45;
   function loop(now) {
     requestAnimationFrame(loop);
-    if (camOn && handsReady && !busy && video && video.readyState >= 2) { busy = true; hands.send({ image: video }).catch(() => { }).finally(() => { busy = false; }); }
-    process(now); if (anim) anim(); draw(now);
+    if (camOn && handsReady && !busy && video && video.readyState >= 2 && now - lastSend >= SEND_MS) { busy = true; lastSend = now; hands.send({ image: video }).catch(() => { }).finally(() => { busy = false; }); }
+    process(now); if (anim) anim(); draw(); watchFps(now);
     if (camOn) { const n = tracked.length, lbl = $('ghCam').querySelector('.lbl'); const t = handsReady ? (n ? `Қўл: ${n} та кўринди` : 'Қўлни кўрсатинг') : 'Юкланмоқда…'; if (lbl.textContent !== t) lbl.textContent = t; }
   }
   requestAnimationFrame(loop);
-  window.goloHand = { simulate: () => { camOn = true; }, orbit, pan, dollyTo, glide, setXray, stepFocus, feed: r => onHands(r), state: () => ({ camOn, xray, hands: tracked.length, radius: ready() ? sph().radius : null }) };
+  window.goloHand = { simulate: () => { camOn = true; }, orbit, pan, dollyTo, glide, setXray, stepFocus, feed: r => onHands(r), state: () => ({ camOn, xray, hands: tracked.length, cur: tracked[0]?.cur || null, dwell: tracked[0]?.dwell || 0, pr: S?.renderer?.getPixelRatio?.() ?? null, radius: ready() ? sph().radius : null }) };
 })();

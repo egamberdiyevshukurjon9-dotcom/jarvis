@@ -1154,9 +1154,10 @@ function stopCamera() {
   const btn = $('#camBtn'); btn.classList.remove('on'); btn.querySelector('em').textContent = 'ўчиқ';
   renderHelp(); renderStatus();
 }
+let lastPump = 0;
 function pumpHands() {
-  if (!state.camOn || !handsReady || handsBusy || video.readyState < 2) return;
-  handsBusy = true;
+  const nowT = performance.now(); if (!state.camOn || !handsReady || handsBusy || video.readyState < 2 || nowT - lastPump < (MOBILE ? 90 : 45)) return;
+  handsBusy = true; lastPump = nowT;
   hands.send({ image: video }).catch(() => { }).finally(() => { handsBusy = false; });
 }
 function toScreen(p) {

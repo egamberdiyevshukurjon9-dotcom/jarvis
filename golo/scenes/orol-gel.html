@@ -336,7 +336,7 @@ requestAnimationFrame(frame);
 if(tour.active)startTour();
 
 /* Golo Lab hand-control hook: lets scenes/hand.js steer this scene */
-window.__golo={THREE,scene,camera,controls,canvas,FOCI,ORDER,setFocus,stopTour,
+window.__golo={THREE,scene,camera,renderer,controls,canvas,FOCI,ORDER,setFocus,stopTour,
   poke(){lastInput=clock;if(camTween){camTween=null;controls.target.copy(curTarget);}if(tour.active)stopTour();controls.enabled=true;},
   get focus(){return live.focus;}};
 window.dispatchEvent(new Event('golo-ready'));
